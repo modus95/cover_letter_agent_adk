@@ -1,6 +1,6 @@
 """This module defines AI agents and models for generating cover letters, utilizing Google ADK."""
 
-from google.adk.agents import Agent, ParallelAgent, SequentialAgent
+from google.adk.agents import LlmAgent, ParallelAgent, SequentialAgent
 from google.adk.tools import google_search
 from google.adk.models import Gemini
 from google.genai import types
@@ -34,7 +34,7 @@ model = define_model(MODEL_NAME, RETRY_CONFIG)
 
 # 1. Web researcher agent -------------------------------
 
-web_researcher_agent = Agent(
+web_researcher_agent = LlmAgent(
     name="company_web_researcher",
     model=model,
     description="Agent to google search the information about an company",
@@ -46,7 +46,7 @@ web_researcher_agent = Agent(
 )
 
 # 2. PDF CV parser agent  -------------------------------
-cv_parcer_agent = Agent(
+cv_parcer_agent = LlmAgent(
     name="cv_parcer_agent",
     model=model,
     description="Agent to parse CV information from a PDF file uploaded by the user",
@@ -65,7 +65,7 @@ cv_parcer_agent = Agent(
 )
 
 # 3. Job description extractor agent  -------------------------------
-job_description_extractor_agent = Agent(
+job_description_extractor_agent = LlmAgent(
     name="job_description_extractor_agent",
     model=model,
     description="Agent to extract job description text from provided website URL",
@@ -88,7 +88,7 @@ job_description_extractor_agent = Agent(
 # )
 
 # 4. Cover letter generator agent  -------------------------------
-cl_generator_agent = Agent(
+cl_generator_agent = LlmAgent(
     name="cl_generator_agent",
     model=model,
     description="Agent to generate a cover letter based on provided information",
