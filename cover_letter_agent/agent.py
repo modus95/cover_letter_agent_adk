@@ -4,6 +4,7 @@ from google.adk.agents import LlmAgent, ParallelAgent, SequentialAgent
 from google.adk.tools import google_search
 from google.adk.models import Gemini
 from google.genai import types
+# from .safe_agents import SafeLlmAgent, SafeParallelAgent, CoverLetterAgent
 
 
 def define_model(model_name:str, retry_options):
@@ -34,6 +35,7 @@ model = define_model(MODEL_NAME, RETRY_CONFIG)
 
 # 1. Web researcher agent -------------------------------
 
+# web_researcher_agent = SafeLlmAgent(
 web_researcher_agent = LlmAgent(
     name="company_web_researcher",
     model=model,
@@ -46,6 +48,7 @@ web_researcher_agent = LlmAgent(
 )
 
 # 2. PDF CV parser agent  -------------------------------
+# cv_parcer_agent = SafeLlmAgent(
 cv_parcer_agent = LlmAgent(
     name="cv_parcer_agent",
     model=model,
@@ -65,6 +68,7 @@ cv_parcer_agent = LlmAgent(
 )
 
 # 3. Job description extractor agent  -------------------------------
+# job_description_extractor_agent = SafeLlmAgent(
 job_description_extractor_agent = LlmAgent(
     name="job_description_extractor_agent",
     model=model,
@@ -74,20 +78,9 @@ job_description_extractor_agent = LlmAgent(
     output_key="job_description"
 )
 
-# job_description_extractor_agent = Agent(
-#     name="job_description_extractor_agent",
-#     model=model,
-#     description="Agent to extract job description text from provided website URL",
-#     instruction="""You are a job description extractor agent.
-#     Your task is to extract the job description text from the provided website URL
-#     using the ```url_context``` tool.""",
-#     generate_context_config=types.GenerateContentConfig(
-#         tools=[{"url_context": {}}]
-#     ),
-#     output_key="job_description"
-# )
 
 # 4. Cover letter generator agent  -------------------------------
+# cl_generator_agent = SafeLlmAgent(
 cl_generator_agent = LlmAgent(
     name="cl_generator_agent",
     model=model,
@@ -117,6 +110,7 @@ cl_generator_agent = LlmAgent(
 )
 
 # The ParallelAgent runs all its sub-agents simultaneously.
+# parallel_research_team = SafeParallelAgent(
 parallel_research_team = ParallelAgent(
     name="ParallelResearchTeam",
     sub_agents=[web_researcher_agent, job_description_extractor_agent, cv_parcer_agent],
@@ -124,6 +118,7 @@ parallel_research_team = ParallelAgent(
 
 # This SequentialAgent defines the high-level workflow:
 # run the parallel team first, then run the aggregator (cover letter generator).
+# root_agent = CoverLetterAgent(
 root_agent = SequentialAgent(
     name="cover_letter_agent",
     sub_agents=[parallel_research_team, cl_generator_agent],
