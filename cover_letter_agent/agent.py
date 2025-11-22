@@ -4,7 +4,6 @@ from google.adk.agents import LlmAgent, ParallelAgent, SequentialAgent
 from google.adk.tools import google_search
 from google.adk.models import Gemini
 from google.genai import types
-# from .safe_agents import SafeLlmAgent, SafeParallelAgent, CoverLetterAgent
 
 
 def define_model(model_name:str, retry_options):
@@ -35,73 +34,117 @@ model = define_model(MODEL_NAME, RETRY_CONFIG)
 
 # 1. Web researcher agent -------------------------------
 
-# web_researcher_agent = SafeLlmAgent(
 web_researcher_agent = LlmAgent(
     name="company_web_researcher",
     model=model,
     description="Agent to google search the information about an company",
-    instruction="""You are a web researcher agent. Your only job is to use the
-    google_search tool to find information about a company, its culture, values, mission and vision based
-    on provided company official website url.""",
+    instruction=\
+    """You are a web researcher agent. Your only job is to use the
+    google_search tool to find information about a company, its culture, values,
+    mission and vision based on provided company official website url.
+    
+    ### Output format:
+    If you didn't manage to retreive any information about the company(e.g. uncorrect url)
+    return JSON error response:
+    {
+        "status": "error",
+        "error_message": "Unable to retrieve information about the company"
+    }
+    
+    If you have successfully retrieved information about the company return JSON response:
+    {
+        "status": "success",
+        "company_info": <Information about the company>
+    }
+    """,
     tools=[google_search],
     output_key="company_info"
 )
 
+
 # 2. PDF CV parser agent  -------------------------------
-# cv_parcer_agent = SafeLlmAgent(
 cv_parcer_agent = LlmAgent(
     name="cv_parcer_agent",
     model=model,
     description="Agent to parse CV information from a PDF file uploaded by the user",
     instruction="""You are a CV PDF parser agent.
     Your task is to parse (define the text content of) the uploaded PDF file to extract the following information:
-        - Name
-        - Email
-        - Phone number
+        - Name        
         - Summary
         - Skills
         - Work Experience
         - Education
+
+    ### Output format:
+    If you didn't manage to parse uploaded file (e.g. uncorrect file, no access to the file):
+    return JSON error response:
+    {
+        "status": "error",
+        "error_message": "Unable to parse uploaded file"
+    }
     
-    Return the extracted information in a structured format.""",
+    If you have successfully parsed uploaded file return JSON response:
+    {
+        "status": "success",
+        "cv_info": <The extracted information>
+    }   
+    """,
     output_key="cv_info"
 )
 
 # 3. Job description extractor agent  -------------------------------
-# job_description_extractor_agent = SafeLlmAgent(
 job_description_extractor_agent = LlmAgent(
     name="job_description_extractor_agent",
     model=model,
     description="Agent to extract job description text from provided website URL",
     instruction="""You are a job description extractor agent.
-    Your task is to extract the job description text from the provided website URL""",
+    Your task is to extract the job description text from the provided website URL.
+    
+    ### Output format:
+    If you didn't manage to extract job description (e.g. uncorrect URL, no access to the URL):
+    return JSON error response:
+    {
+        "status": "error",
+        "error_message": "Unable to extract job description from provided URL"
+    }
+    
+    If you have successfully extracted job description return JSON response:
+    {
+        "status": "success",
+        "job_description": <The extracted job description text>
+    }   
+    """,
     output_key="job_description"
 )
 
 
 # 4. Cover letter generator agent  -------------------------------
-# cl_generator_agent = SafeLlmAgent(
 cl_generator_agent = LlmAgent(
     name="cl_generator_agent",
     model=model,
     description="Agent to generate a cover letter based on provided information",
     instruction="""You are a professional cover letter generator agent.
-    Your task is to generate a proffessional, well-structured cover letter based on the provided information below:
+
+    First things first, check the "status" field in each "ParallelResearchTeam" sub_agent's response:
+    - If any of the sub_agents returned status "error", explain the issue to the user clearly and
+    don't generate a cover letter.
+    
+    - If all sub_agents returned status "success", generate a proffessional, well-structured 
+    cover letter based on the provided information below:
     
     ### About company (mission, vision, values):
-    {company_info}
+    {company_info["company_info"]}
     
     ### Job description:
-    {job_description}
+    {job_description["job_description"]}
     
     ### CV:
-    {cv_info}
+    {cv_info["cv_info"]}
 
     ### Constraints:    
     - Don't include any numerical metrics.     
     - ALWAYS include the bullet points of values that the user could bring to the company.
-    - The style of the letter should NOT be pretentious and pathetic.
-    - The letter should not be too long.
+    - The style of the letter should NOT be pretentious and pathetic.    
 
     ### Output format:
     Return the text formatted for easy copy-pasting into Word document.
@@ -110,7 +153,6 @@ cl_generator_agent = LlmAgent(
 )
 
 # The ParallelAgent runs all its sub-agents simultaneously.
-# parallel_research_team = SafeParallelAgent(
 parallel_research_team = ParallelAgent(
     name="ParallelResearchTeam",
     sub_agents=[web_researcher_agent, job_description_extractor_agent, cv_parcer_agent],
@@ -118,7 +160,6 @@ parallel_research_team = ParallelAgent(
 
 # This SequentialAgent defines the high-level workflow:
 # run the parallel team first, then run the aggregator (cover letter generator).
-# root_agent = CoverLetterAgent(
 root_agent = SequentialAgent(
     name="cover_letter_agent",
     sub_agents=[parallel_research_team, cl_generator_agent],
