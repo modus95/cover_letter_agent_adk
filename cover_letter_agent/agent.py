@@ -48,7 +48,7 @@ web_researcher_agent = LlmAgent(
     return JSON error response:
     {
         "status": "error",
-        "error_message": "Unable to retrieve information about the company"
+        "error_message": "Unable to retrieve information about the company: <The error message>"
     }
     
     If you have successfully retrieved information about the company return JSON response:
@@ -80,11 +80,11 @@ cv_parcer_agent = LlmAgent(
     return JSON error response:
     {
         "status": "error",
-        "error_message": "Unable to parse uploaded file"
+        "error_message": "Unable to parse uploaded file: <The error message>"
     }
     
     If you have successfully parsed uploaded file return JSON response:
-    {
+    {   
         "status": "success",
         "cv_info": <The extracted information>
     }   
@@ -105,13 +105,15 @@ job_description_extractor_agent = LlmAgent(
     return JSON error response:
     {
         "status": "error",
-        "error_message": "Unable to extract job description from provided URL"
+        "error_message": "Unable to extract job description from provided URL: <The error message>"
     }
     
     If you have successfully extracted job description return JSON response:
     {
         "status": "success",
-        "job_description": <The extracted job description text>
+        "job_description": <The text of job description ONLY.
+                            Don't include your thoughts, any additional information
+                            or any other text>
     }   
     """,
     output_key="job_description"
@@ -126,8 +128,8 @@ cl_generator_agent = LlmAgent(
     instruction="""You are a professional cover letter generator agent.
 
     First things first, check the "status" field in each "ParallelResearchTeam" sub_agent's response:
-    - If any of the sub_agents returned status "error", explain the issue to the user clearly and
-    don't generate a cover letter.
+    - If any of the sub_agents returned status "error", don't generate a cover letter, but let the user
+    know what the reason of the error is.
     
     - If all sub_agents returned status "success", generate a proffessional, well-structured 
     cover letter based on the provided information below:
