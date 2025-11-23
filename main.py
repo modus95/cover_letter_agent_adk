@@ -1,6 +1,7 @@
 """This module defines the main entry point for the cover letter agent."""
 
 import asyncio
+import argparse
 
 from dotenv import load_dotenv
 from google.adk.runners import Runner
@@ -18,7 +19,7 @@ APP_NAME = "Cover Letter Agent"
 USER_ID = "slu"
 
 
-async def main_async():
+async def main_async(file_name: str):
     """Main entry point for the cover letter agent."""
 
     # Initialize the runner
@@ -36,7 +37,7 @@ async def main_async():
     print("Welcome to the cover letter agent!\n")
     print("Please provide the following information:\n")
 
-    file_name = "./data/Sergei_Lungullo_DS_m2025.pdf"  #TO DO: make it dynamic
+    # file_name = "./data/Sergei_Lungullo_DS_m2025.pdf"  #TO DO: make it dynamic
     company_url = input("Company URL: ")
     job_description_url = input("Job description URL: ")
 
@@ -62,4 +63,8 @@ async def main_async():
     print(agent_response)
 
 if __name__ == "__main__":
-    asyncio.run(main_async())
+    parser = argparse.ArgumentParser(description="Cover Letter Agent")
+    parser.add_argument("-f", "--file_name", type=str, required=True, help="Path to the PDF file")
+    args = parser.parse_args()
+
+    asyncio.run(main_async(args.file_name))
