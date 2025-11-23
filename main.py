@@ -6,6 +6,7 @@ import argparse
 from dotenv import load_dotenv
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
+from google.adk.plugins.logging_plugin import LoggingPlugin
 
 from utils import call_agent_async
 from cover_letter_agent.agent import root_agent
@@ -19,15 +20,18 @@ APP_NAME = "Cover Letter Agent"
 USER_ID = "slu"
 
 
-async def main_async(file_name: str):
+async def main_async(file_name: str, verbose: bool):
     """Main entry point for the cover letter agent."""
+
+    plugins = [LoggingPlugin()] if verbose else None
 
     # Initialize the runner
     runner = Runner(
         agent=root_agent,
         app_name=APP_NAME,
         session_service=session_service,
-        )
+        plugins=plugins
+    )
 
     # Create a new session
     new_session = await session_service.create_session(
@@ -37,7 +41,6 @@ async def main_async(file_name: str):
     print("Welcome to the cover letter agent!\n")
     print("Please provide the following information:\n")
 
-    # file_name = "./data/Sergei_Lungullo_DS_m2025.pdf"  #TO DO: make it dynamic
     company_url = input("Company URL: ")
     job_description_url = input("Job description URL: ")
 
@@ -65,6 +68,13 @@ async def main_async(file_name: str):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Cover Letter Agent")
     parser.add_argument("-f", "--file_name", type=str, required=True, help="Path to the PDF file")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        default=False,
+        action='store_true',
+        help="Enable verbose logging"
+        )
     args = parser.parse_args()
 
-    asyncio.run(main_async(args.file_name))
+    asyncio.run(main_async(args.file_name, args.verbose))
