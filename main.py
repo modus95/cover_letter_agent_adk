@@ -9,7 +9,7 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.plugins.logging_plugin import LoggingPlugin
 
 from utils import call_agent_async
-from cover_letter_agent.agent import root_agent
+from cover_letter_agent.agent import get_root_agent
 
 
 load_dotenv()
@@ -20,14 +20,14 @@ APP_NAME = "Cover Letter Agent"
 USER_ID = "slu"
 
 
-async def main_async(file_name: str, verbose: bool):
+async def main_async(file_name: str, verbose: bool, model_name: str):
     """Main entry point for the cover letter agent."""
 
     plugins = [LoggingPlugin()] if verbose else None
 
     # Initialize the runner
     runner = Runner(
-        agent=root_agent,
+        agent=get_root_agent(model_name),
         app_name=APP_NAME,
         session_service=session_service,
         plugins=plugins
@@ -75,6 +75,13 @@ if __name__ == "__main__":
         action='store_true',
         help="Enable verbose logging"
         )
+    parser.add_argument(
+        "-m",
+        "--model",
+        type=str,
+        default="gemini-2.5-flash-preview-09-2025",
+        help="Model name to use"
+    )
     args = parser.parse_args()
 
-    asyncio.run(main_async(args.file_name, args.verbose))
+    asyncio.run(main_async(args.file_name, args.verbose, args.model))

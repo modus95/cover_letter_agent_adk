@@ -3,6 +3,21 @@
 import pathlib
 from google.adk.runners import Runner
 from google.genai import types
+from google.adk.models.google_llm import Gemini
+
+
+def define_model(model_name:str, retry_options):
+    """
+    Initializes and returns a Gemini model instance.
+
+    Args:
+        model_name (str): The name of the Gemini model to instantiate.
+        retry_options: Configuration for retrying HTTP requests to the model API.
+
+    Returns:
+        Gemini: An instance of the Gemini model configured with the specified retry options.
+    """
+    return Gemini(model=model_name, retry_options=retry_options)
 
 
 async def process_agent_response(event):
