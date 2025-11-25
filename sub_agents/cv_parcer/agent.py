@@ -9,8 +9,9 @@ from google.adk.agents.callback_context import CallbackContext
 from google.genai import types
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 OUTPUT_KEY = "cv_info"
 
@@ -18,7 +19,6 @@ OUTPUT_KEY = "cv_info"
 def logging_agent_output_status(callback_context: CallbackContext) -> Optional[types.Content]:
     """Log agent output status."""
 
-    agent = callback_context.agent_name
     current_state = callback_context.state
     output = current_state.get(OUTPUT_KEY)
 
@@ -31,7 +31,7 @@ def logging_agent_output_status(callback_context: CallbackContext) -> Optional[t
         if match:
             status = match.group(1)
 
-    logger.info("Agent %s: Status: %s", agent, status)
+    logger.info("Status: %s", status.upper())
 
     return None
 

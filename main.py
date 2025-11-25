@@ -65,6 +65,7 @@ async def main_async(file_name: str, verbose: bool, model_name: str):
     print("THE AGENT RESPONSE:\n")
     print(agent_response)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Cover Letter Agent")
     parser.add_argument("-f", "--file_name", type=str, required=True, help="Path to the PDF file")

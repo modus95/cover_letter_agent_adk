@@ -1,7 +1,6 @@
 """This module defines AI agents and models for generating cover letters, utilizing Google ADK."""
 
 from google.adk.agents import ParallelAgent, SequentialAgent
-from google.genai import types
 from sub_agents.web_researcher.agent import get_web_researcher_agent
 from sub_agents.cv_parcer.agent import get_cv_parcer_agent
 from sub_agents.job_description.agent import get_job_description_agent
@@ -10,12 +9,7 @@ from sub_agents.cl_generator.agent import get_cl_generator_agent
 from utils import define_model
 
 
-RETRY_CONFIG = types.HttpRetryOptions(
-    attempts=5,  # Maximum retry attempts
-    exp_base=7,  # Delay multiplier
-    initial_delay=1,
-    http_status_codes=[429, 500, 503, 504], # Retry on these HTTP errors
-)
+DEFAULT_MODEL_NAME = "gemini-2.5-flash-preview-09-2025"
 
 
 def get_root_agent(model_name: str):
@@ -34,7 +28,7 @@ def get_root_agent(model_name: str):
         writing process.
     """
 
-    model = define_model(model_name, RETRY_CONFIG)
+    model = define_model(model_name)
 
     #SUB-AGENTS:
     web_researcher_agent = get_web_researcher_agent(model)
@@ -50,9 +44,12 @@ def get_root_agent(model_name: str):
 
     # This SequentialAgent defines the high-level workflow:
     # run the parallel team first, then run the aggregator (cover letter generator).
-    root_agent = SequentialAgent(
+    ra = SequentialAgent(
         name="cover_letter_agent",
         sub_agents=[parallel_research_team, cl_generator_agent],
     )
 
-    return root_agent
+    return ra
+
+
+root_agent = get_root_agent(DEFAULT_MODEL_NAME)

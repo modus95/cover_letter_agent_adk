@@ -28,9 +28,9 @@ def get_cl_generator_agent(model):
         {cv_info["cv_info"]}
 
         ### Constraints:    
-        - Don't include any numerical metrics.     
+        - The cover letter should be short and concise, up to 300 words.        
         - ALWAYS include the bullet points of values that the user could bring to the company.
-        - The style of the letter should NOT be pretentious and pathetic.    
+        - Don't include any numerical metrics.     
 
         ### Output format:
         Return the text formatted for easy copy-pasting into Word document.
