@@ -1,10 +1,10 @@
 """This module defines AI agents and models for generating cover letters, utilizing Google ADK."""
 
 from google.adk.agents import ParallelAgent, SequentialAgent
-from sub_agents.web_researcher.agent import get_web_researcher_agent
-from sub_agents.cv_parcer.agent import get_cv_parcer_agent
-from sub_agents.job_description.agent import get_job_description_agent
-from sub_agents.cl_generator.agent import get_cl_generator_agent
+import sub_agents.web_researcher.agent as res
+import sub_agents.cv_parcer.agent as cvpa
+import sub_agents.job_description.agent as jda
+import sub_agents.cl_generator.agent as clg
 
 from utils import define_model
 
@@ -31,10 +31,11 @@ def get_root_agent(model_name: str):
     model = define_model(model_name)
 
     #SUB-AGENTS:
-    web_researcher_agent = get_web_researcher_agent(model)
-    cv_parcer_agent = get_cv_parcer_agent(model)
-    job_description_agent = get_job_description_agent(model)
-    cl_generator_agent = get_cl_generator_agent(model)
+    web_researcher_agent = res.get_web_researcher_agent(model)
+    cv_parcer_agent = cvpa.get_cv_parcer_agent(model)
+    # job_description_agent = jda.get_job_description_agent(model)
+    job_description_agent = jda.get_job_description_agent_tavily(model)
+    cl_generator_agent = clg.get_cl_generator_agent(model)
 
     # The ParallelAgent runs all its sub-agents simultaneously.
     parallel_research_team = ParallelAgent(
