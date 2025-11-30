@@ -45,10 +45,10 @@ async def main_async(file_name: str, verbose: bool, model_name: str):
     job_description_url = input("Job description URL: ")
 
     prompt = f"""
-    ### Company
+    ### Company:
     {company_url}
 
-    ### Job description
+    ### Job description:
     {job_description_url}    
     """
 
@@ -62,7 +62,7 @@ async def main_async(file_name: str, verbose: bool, model_name: str):
         file_name
     )
 
-    print("THE AGENT RESPONSE:\n")
+    print("\nTHE AGENT RESPONSE:\n")
     print(agent_response)
 
 
@@ -85,4 +85,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    asyncio.run(main_async(args.file_name, args.verbose, args.model))
+    # Set up and run the asynchronous main function using an event loop
+    # This is necessary for the Google ADK to work properly
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(main_async(args.file_name, args.verbose, args.model))
+    finally:
+        loop.close()

@@ -30,18 +30,25 @@ def logging_agent_output_status(callback_context: CallbackContext) -> Optional[t
 
     status = ""
     if isinstance(output, dict):
-        status = output.get("status")
-
-    if isinstance(status, str):
+        status = output.get("status", "")
+    elif isinstance(output, str):
         match = re.search(r'"status"\s*:\s*"([^\"]+)"', output)
         if match:
             status = match.group(1)
 
-    logger.info("Status: %s", status.upper())
+    if status:
+        logger.info("Status: %s", status.upper())
+    else:
+        logger.info("NO `STATUS` IN THE AGENT OUTPUT")
 
 
 def get_job_description_agent_tavily(model):
-    """Get job description extractor agent."""
+    """
+    Creates an LLM agent for generating job descriptions using Tavily MCP tools.
+
+    Args: model: The language model to be used.
+    Returns: LlmAgent
+    """
 
     mcp_tavily_remote_server = McpToolset(
             connection_params=StreamableHTTPServerParams(
@@ -60,14 +67,18 @@ def get_job_description_agent_tavily(model):
         instruction=\
         """You are a job description extractor agent.
         Your task is to extract the job description content from the provided Company URL,
-        using Tavily MCP tool.
-        
+        using Tavily MCP tool. 
+        Respond ONLY with job description text, don't include any additional information
+        (e.g. tool name, tool description, etc.) or any other text.
+        For the response use the output format below.
+
         ### Output format:
         - If you didn't manage to extract job description (e.g. uncorrect URL,
         no access to the URL), return JSON error response:
         {
             "status": "error",
-            "error_message": "Unable to extract job description from provided URL: <The error message>"
+            "error_message": "Unable to extract job description from provided URL:
+                             <The error message>"
         }
         
         - If you have successfully extracted job description, return JSON response:
@@ -91,15 +102,20 @@ def get_job_description_agent(model):
         name="job_description_extractor_agent",
         model=model,
         description="Agent to extract job description text from provided website URL",
-        instruction="""You are a job description extractor agent.
+        instruction=\
+        """You are a job description extractor agent.
         Your task is to extract the job description text from the provided website URL.
+
+        Respond ONLY with job description text, don't include any additional information
+        or any other text. For the response use the output format below.
         
         ### Output format:
         - If you didn't manage to extract job description (e.g. uncorrect URL,
         no access to the URL), return JSON error response:
         {
             "status": "error",
-            "error_message": "Unable to extract job description from provided URL: <The error message>"
+            "error_message": "Unable to extract job description from provided URL:
+                              <The error message>"
         }
         
         - If you have successfully extracted job description, return JSON response:

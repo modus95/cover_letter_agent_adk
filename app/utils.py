@@ -1,6 +1,7 @@
 """Utility functions for agent interactions and asynchronous operations."""
 
 import pathlib
+from contextlib import suppress
 from google.adk.runners import Runner
 from google.genai import types
 from google.adk.models.google_llm import Gemini
@@ -51,6 +52,8 @@ async def call_agent_async(
     ):
     """Call the agent asynchronously with the user's prompt and file."""
 
+    final_response_text = ""
+
     file_path = pathlib.Path(file_name)
     if not file_path.exists():
         raise FileNotFoundError(f"File not found: {file_name}")
@@ -66,18 +69,21 @@ async def call_agent_async(
             ]
         )
 
-    final_response_text = ""
+    agen = runner.run_async(
+        user_id=user_id,
+        session_id=session_id,
+        new_message=query_content,
+    )
 
     try:
-        async for event in runner.run_async(
-            user_id=user_id, session_id=session_id, new_message=query_content
-        ):
-            # Process each event and get the final response if available
+        async for event in agen:
             response = await process_agent_response(event)
             if response:
                 final_response_text = response
-    except Exception as e:
-        print(f"Error during agent call: {e}")
+
+    finally:
+        with suppress(Exception):
+            await agen.close()
 
     return final_response_text
     

@@ -33,8 +33,11 @@ def get_root_agent(model_name: str):
     #SUB-AGENTS:
     web_researcher_agent = res.get_web_researcher_agent(model)
     cv_parcer_agent = cvpa.get_cv_parcer_agent(model)
-    # job_description_agent = jda.get_job_description_agent(model)
-    job_description_agent = jda.get_job_description_agent_tavily(model)
+
+    # Tavily MCP extractor tool:jda.get_job_description_agent_tavily(model)
+    # Currently doesn't work properly, responding with "MALFORMED_FUNCTION_CALL"
+    # TO DO: make research and fix
+    job_description_agent = jda.get_job_description_agent(model)
     cl_generator_agent = clg.get_cl_generator_agent(model)
 
     # The ParallelAgent runs all its sub-agents simultaneously.
