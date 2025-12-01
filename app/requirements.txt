@@ -1,2 +1,5 @@
 google-cloud-aiplatform==1.128.0
 google-adk==1.19.0
+streamlit
+python-dotenv
+nest_asyncio
