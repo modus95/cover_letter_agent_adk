@@ -50,14 +50,14 @@ def get_job_description_agent_tavily(model):
     Returns: LlmAgent
     """
 
-    mcp_tavily_remote_server = McpToolset(
+    mcp_tavily_tool = McpToolset(
             connection_params=StreamableHTTPServerParams(
                 url="https://mcp.tavily.com/mcp/",
                 headers={
                     "Authorization": f"Bearer {os.getenv('TAVILY_API_KEY')}",
                 },
             ),
-            tool_filter=["tavily-extract"],
+            # tool_filter=['tavily_extract'], # causes "MALFORMED_FUNCTION_CALL"
         )
 
     return LlmAgent(
@@ -67,14 +67,15 @@ def get_job_description_agent_tavily(model):
         instruction=\
         """You are a job description extractor agent.
         Your task is to extract the job description content from the provided Company URL,
-        using Tavily MCP tool. 
+        using 'mcp_tavily_tool' tool. 
+
         Respond ONLY with job description text, don't include any additional information
         (e.g. tool name, tool description, etc.) or any other text.
         For the response use the output format below.
 
         ### Output format:
         - If you didn't manage to extract job description (e.g. uncorrect URL,
-        no access to the URL), return JSON error response:
+        no access to the URL, etc.), return JSON error response:
         {
             "status": "error",
             "error_message": "Unable to extract job description from provided URL:
@@ -89,7 +90,7 @@ def get_job_description_agent_tavily(model):
                                 or any other text>
         }   
         """,
-        tools=[mcp_tavily_remote_server],
+        tools=[mcp_tavily_tool],
         output_key=OUTPUT_KEY,
         after_agent_callback=logging_agent_output_status
     )
@@ -111,7 +112,7 @@ def get_job_description_agent(model):
         
         ### Output format:
         - If you didn't manage to extract job description (e.g. uncorrect URL,
-        no access to the URL), return JSON error response:
+        no access to the URL, etc.), return JSON error response:
         {
             "status": "error",
             "error_message": "Unable to extract job description from provided URL:
