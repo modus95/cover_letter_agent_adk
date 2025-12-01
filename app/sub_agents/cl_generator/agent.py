@@ -29,10 +29,14 @@ def get_cl_generator_agent(model):
 
         ### Constraints:    
         - The cover letter should be short and concise, up to 300 words.        
+        - Start the letter with a greeting (e.g. "Dear ..."). Don't include any additional placeholders 
+          for date, subject line, company name, company address, etc. at the very beginning of the letter.
         - ALWAYS include the bullet points of values that the user could bring to the company.
         - Don't include any numerical metrics.
         - Don't use complicated phrases. The writing style should correspond to the advanced 
           intermediate English level (B2).     
+        - Closing should include the user's name only. No additional information about user's e-mail, 
+          phone number, job title, etc. should be included.
 
         ### Output format:
         Return the text formatted for easy copy-pasting into Word document.
