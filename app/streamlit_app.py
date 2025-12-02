@@ -46,6 +46,12 @@ st.html("""
     .stButton>button:hover {
         background-color: #45a049;
     }
+    .stButton>button[disabled] {
+        background-color: #9e9e9e !important;
+        color: #ffffff !important;
+        cursor: not-allowed !important;
+        opacity: 0.85 !important;
+    }
     .stTextInput>div>div>input {
         border-radius: 10px;        
     }
@@ -70,12 +76,16 @@ st.html("""
 
 # Settings in sidebar
 model_expander = st.sidebar.expander("**Settings**", expanded=False)
-model_name = model_expander.selectbox(
-    "Gemini Model",
-    options=["gemini-2.5-flash-preview-09-2025",
-             "gemini-2.5-flash-lite"],
-    index=0
-    )
+
+# ---- SESSION STATE ----
+if "generating" not in st.session_state:
+    st.session_state.generating = False
+
+if "generate_inputs" not in st.session_state:
+    st.session_state.generate_inputs = None
+
+if "generated_cover_letter" not in st.session_state:
+    st.session_state.generated_cover_letter = None
 
 
 async def run_agent(company_url, job_description_url, file_path, model):
@@ -122,6 +132,13 @@ def main():
     st.title("📝 Cover Letter AI Agent")
     st.divider()
 
+    model_name = model_expander.selectbox(
+        "Gemini Model",
+        options=["gemini-2.5-flash-preview-09-2025",
+                 "gemini-2.5-flash-lite"],
+        index=0
+    )
+
     left, right = st.columns(
         2,
         gap="medium",
@@ -144,51 +161,87 @@ def main():
         type=["pdf", "doc", "docx"]
     )
 
-    if left.button("Generate Cover Letter"):
+    # ---- BUTTON (disabled during generation) ----
+    generate_clicked = left.button(
+        "Generate Cover Letter",
+        disabled=st.session_state.generating,
+        key="generate_btn"
+    )
+
+    # User clicked button
+    if generate_clicked:
         if not company_url or not job_description_url or not uploaded_file:
             left.warning("Please fill in all fields and upload your CV.")
         else:
-            with st.spinner(
-                "Generating cover letter... This may take a minute."
-            ):
-                # Save the uploaded file
+            st.session_state.generating = True
+            st.session_state.generate_inputs = {
+                # "company_url": company_url,
+                # "job_description_url": job_description_url,
+                "uploaded_file": uploaded_file,
+                # "model": model_name
+            }
+            st.rerun()
+
+    # ---- PROCESS GENERATION IF FLAG SET ----
+    if st.session_state.generating and st.session_state.generate_inputs:
+        data = st.session_state.generate_inputs
+        # company_url = data["company_url"]
+        # job_description_url = data["job_description_url"]
+        uploaded_file = data["uploaded_file"]
+        # model_name = data["model"]
+
+        with st.spinner("Generating cover letter... This may take a minute."):
+            try:
+                temp_file_path = utils.save_uploaded_file(uploaded_file)
+            except Exception as e:
+                left.error(f"Error saving file: {e}")
+                st.session_state.generating = False
+                st.session_state.generate_inputs = None
+                st.session_state.generated_cover_letter = None
+                return
+
+            if temp_file_path:
                 try:
-                    temp_file_path = utils.save_uploaded_file(uploaded_file)
-                except Exception as e:
-                    left.error(f"Error saving file: {e}")
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
 
-                if temp_file_path:
-                    try:
-                        # Run the agent with manual loop management to ensure cleanup
-                        loop = asyncio.new_event_loop()
-                        asyncio.set_event_loop(loop)
-
-                        result = loop.run_until_complete(
-                            run_agent(
-                                company_url,
-                                job_description_url,
-                                temp_file_path,
-                                model_name
-                            )
+                    result = loop.run_until_complete(
+                        run_agent(
+                            company_url,
+                            job_description_url,
+                            temp_file_path,
+                            model_name
                         )
+                    )
 
-                        left.success("Cover Letter Generated Successfully!", icon="✅")
-                        # right.subheader("Your Cover Letter")
-                        right.text_area(
-                            "Cover Letter",
-                            value=result,
-                            label_visibility="collapsed",
-                            height=500
-                            )
+                    # Save the result to session_state (PERSIST)
+                    st.session_state.generated_cover_letter = result
 
-                        right.markdown(":red[*Read carefully and make adjustments if needed.]")
+                except Exception as e:
+                    left.error(f"An error occurred: {e}", icon="❌")
 
-                    except Exception as e:
-                        left.error(f"An error occurred: {e}", icon="❌")
-                    finally:
-                        # Clean up the temporary file
-                        if os.path.exists(temp_file_path):
-                            os.remove(temp_file_path)
+                finally:
+                    if os.path.exists(temp_file_path):
+                        os.remove(temp_file_path)
+
+                    # ENABLE the button again
+                    st.session_state.generating = False
+                    st.session_state.generate_inputs = None
+                    st.rerun()
+
+
+    # ---- SHOW RESULT IF AVAILABLE ----
+    if st.session_state.generated_cover_letter:
+        left.success("Cover Letter Generated Successfully!", icon="✅")
+
+        right.text_area(
+            "Cover Letter",
+            value=st.session_state.generated_cover_letter,
+            height=500,
+            label_visibility="collapsed"
+        )
+        right.markdown(":red[*Read carefully and make adjustments if needed.]")
+
 
 if __name__ == "__main__":
     main()
