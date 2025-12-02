@@ -1,5 +1,6 @@
 """Utility functions for agent interactions and asynchronous operations."""
 
+import tempfile
 import pathlib
 from contextlib import suppress
 from google.adk.runners import Runner
@@ -25,6 +26,13 @@ def define_model(model_name:str):
         Gemini: An instance of the Gemini model configured with the specified retry options.
     """
     return Gemini(model=model_name, retry_options=RETRY_CONFIG)
+
+
+def save_uploaded_file(uploaded_file):
+    """Save uploaded file to a temporary file and return the path."""
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+        tmp_file.write(uploaded_file.getvalue())
+        return tmp_file.name
 
 
 async def process_agent_response(event):
