@@ -25,7 +25,7 @@ st.set_page_config(
     page_title="Cover Letter AI Agent",
     page_icon="📝",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # Custom CSS for "fancy" look
@@ -49,28 +49,43 @@ st.html("""
     .stTextInput>div>div>input {
         border-radius: 10px;        
     }
+    .stTextInput label p, .stFileUploader label p {
+        font-size: 1.1rem !important;
+        font-weight: bold;
+    }    
     h1 {
         color: #2c3e50;
         text-align: center;
         font-family: 'Helvetica Neue', sans-serif;
     }
-    .description {
-        text-align: center;
-        color: #7f8c8d;
-        margin-bottom: 2rem;
+    /* Decrease font size of selectbox options */
+    .stSelectbox div[data-baseweb="select"] > div {
+        font-size: 0.8rem !important;
+    }
+    div[data-baseweb="popover"] li, div[data-baseweb="popover"] div {
+        font-size: 0.8rem !important;
     }
 </style>
 """)
 
+# Settings in sidebar
+model_expander = st.sidebar.expander("**Settings**", expanded=False)
+model_name = model_expander.selectbox(
+    "Gemini Model",
+    options=["gemini-2.5-flash-preview-09-2025",
+             "gemini-2.5-flash-lite"],
+    index=0
+    )
 
-async def run_agent(company_url, job_description_url, file_path, model_name):
+
+async def run_agent(company_url, job_description_url, file_path, model):
     """Run the agent asynchronously."""
     session_service = InMemorySessionService()
 
     # Initialize the runner
     # We can add LoggingPlugin if we want to see logs in the console
     runner = Runner(
-        agent=get_root_agent(model_name),
+        agent=get_root_agent(model),
         app_name=APP_NAME,
         session_service=session_service,
         plugins=[LoggingPlugin()]
@@ -128,10 +143,6 @@ def main():
         "**Upload your CV (PDF, DOC)**",
         type=["pdf", "doc", "docx"]
     )
-
-    # Advanced settings (collapsible)
-    with left.expander("**Advanced Settings**"):
-        model_name = st.text_input("Model Name", value="gemini-2.5-flash-preview-09-2025")
 
     if left.button("Generate Cover Letter"):
         if not company_url or not job_description_url or not uploaded_file:
