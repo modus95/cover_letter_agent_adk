@@ -81,19 +81,22 @@ model_expander = st.sidebar.expander("**Settings**", expanded=False)
 if "generating" not in st.session_state:
     st.session_state.generating = False
 
-if "generate_inputs" not in st.session_state:
-    st.session_state.generate_inputs = None
-
 if "generated_cover_letter" not in st.session_state:
     st.session_state.generated_cover_letter = None
+
+if "is_error" not in st.session_state:
+    st.session_state.is_error = {
+        "error": False,
+        "message": ""
+    }
+
+# --------------------------------------------------------------------
 
 
 async def run_agent(company_url, job_description_url, file_path, model):
     """Run the agent asynchronously."""
     session_service = InMemorySessionService()
 
-    # Initialize the runner
-    # We can add LoggingPlugin if we want to see logs in the console
     runner = Runner(
         agent=get_root_agent(model),
         app_name=APP_NAME,
@@ -174,60 +177,45 @@ def main():
             left.warning("Please fill in all fields and upload your CV.")
         else:
             st.session_state.generating = True
-            st.session_state.generate_inputs = {
-                # "company_url": company_url,
-                # "job_description_url": job_description_url,
-                "uploaded_file": uploaded_file,
-                # "model": model_name
+            st.session_state.is_error = {
+                "error": False,
+                "message": ""
             }
             st.rerun()
 
     # ---- PROCESS GENERATION IF FLAG SET ----
-    if st.session_state.generating and st.session_state.generate_inputs:
-        data = st.session_state.generate_inputs
-        # company_url = data["company_url"]
-        # job_description_url = data["job_description_url"]
-        uploaded_file = data["uploaded_file"]
-        # model_name = data["model"]
-
-        with st.spinner("Generating cover letter... This may take a minute."):
+    if st.session_state.generating:
+        with st.spinner(":blue[*Generating cover letter... This may take a minute.*]"):
             try:
                 temp_file_path = utils.save_uploaded_file(uploaded_file)
-            except Exception as e:
-                left.error(f"Error saving file: {e}")
-                st.session_state.generating = False
-                st.session_state.generate_inputs = None
-                st.session_state.generated_cover_letter = None
-                return
 
-            if temp_file_path:
-                try:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-
-                    result = loop.run_until_complete(
-                        run_agent(
-                            company_url,
-                            job_description_url,
-                            temp_file_path,
-                            model_name
-                        )
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                result = loop.run_until_complete(
+                    run_agent(
+                        company_url,
+                        job_description_url,
+                        temp_file_path,
+                        model_name
                     )
+                )
 
-                    # Save the result to session_state (PERSIST)
-                    st.session_state.generated_cover_letter = result
+                # Save the result to session_state (PERSIST)
+                st.session_state.generated_cover_letter = result
 
-                except Exception as e:
-                    left.error(f"An error occurred: {e}", icon="❌")
+            except Exception as e:
+                st.session_state.is_error = {
+                    "error": True,
+                    "message": str(e)
+                }
 
-                finally:
-                    if os.path.exists(temp_file_path):
-                        os.remove(temp_file_path)
+            finally:
+                if os.path.exists(temp_file_path):
+                    os.remove(temp_file_path)
 
-                    # ENABLE the button again
-                    st.session_state.generating = False
-                    st.session_state.generate_inputs = None
-                    st.rerun()
+                # ENABLE the button again
+                st.session_state.generating = False
+                st.rerun()
 
 
     # ---- SHOW RESULT IF AVAILABLE ----
@@ -241,6 +229,10 @@ def main():
             label_visibility="collapsed"
         )
         right.markdown(":red[*Read carefully and make adjustments if needed.]")
+
+    # ---- ERROR MESSAGE ----
+    if st.session_state.is_error["error"]:
+        left.error(f"An error occurred: {st.session_state.is_error['message']}", icon="❌")
 
 
 if __name__ == "__main__":
