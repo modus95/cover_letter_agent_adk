@@ -52,18 +52,22 @@ def get_cv_parcer_agent(model):
             - Education
 
         ### Output format:
-        If you didn't manage to parse uploaded file (e.g. uncorrect file, no access to the file):
+        - If you didn't manage to parse uploaded file (e.g. uncorrect file, no access to the file):
         return JSON error response:
-        {
+        ```json
+        {{
             "status": "error",
             "error_message": "Unable to parse uploaded file: <The error message>"
-        }
+        }}
+        ```
         
-        If you have successfully parsed uploaded file return JSON response:
-        {   
+        - If you have successfully parsed uploaded file return JSON response:
+        ```json
+        {{
             "status": "success",
             "cv_info": <The extracted information>
-        }   
+        }}
+        ```   
         """,
         output_key=OUTPUT_KEY,
         after_agent_callback=logging_agent_output_status

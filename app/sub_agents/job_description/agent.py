@@ -42,20 +42,24 @@ def logging_agent_output_status(callback_context: CallbackContext) -> Optional[t
         logger.info("NO `STATUS` IN THE AGENT OUTPUT")
 
 
-def get_job_description_agent_tavily(model):
+def get_job_description_agent_tavily(model,
+                                     tavily_advanced_extraction):
     """
     Creates an LLM agent for generating job descriptions using Tavily MCP tools.
 
     Args: model: The language model to be used.
+    tavily_advanced_extraction: Whether to use Tavily advanced extraction.
     Returns: LlmAgent
     """
+
+    extract_depth = "advanced" if tavily_advanced_extraction else "basic"
 
     mcp_tavily_tool = McpToolset(
             connection_params=StreamableHTTPServerParams(
                 url="https://mcp.tavily.com/mcp/",
                 headers={
                     "Authorization": f"Bearer {os.getenv('TAVILY_API_KEY')}",
-                },
+                }
             ),
             # tool_filter=['tavily_extract'], # causes "MALFORMED_FUNCTION_CALL"
         )
@@ -65,9 +69,14 @@ def get_job_description_agent_tavily(model):
         model=model,
         description="Agent to extract job description content from provided Company URL",
         instruction=\
-        """You are a job description extractor agent.
+        f"""You are a job description extractor agent.
         Your task is to extract the job description content from the provided Company URL,
-        using 'mcp_tavily_tool' tool. 
+        using 'mcp_tavily_tool' tool. In addition to "urls" use the following args for
+        a function call:
+        {{
+            "extract_depth": "{extract_depth}",
+            "format": "text"
+        }}
 
         Respond ONLY with job description text, don't include any additional information
         (e.g. tool name, tool description, etc.) or any other text.
@@ -76,19 +85,23 @@ def get_job_description_agent_tavily(model):
         ### Output format:
         - If you didn't manage to extract job description (e.g. uncorrect URL,
         no access to the URL, etc.), return JSON error response:
-        {
+        ```json
+        {{
             "status": "error",
             "error_message": "Unable to extract job description from provided URL:
                              <The error message>"
-        }
+        }}
+        ```
         
         - If you have successfully extracted job description, return JSON response:
-        {
+        ```json
+        {{
             "status": "success",
             "job_description": <The text of job description ONLY.
                                 Don't include your thoughts, any additional information
                                 or any other text>
-        }   
+        }}
+        ```
         """,
         tools=[mcp_tavily_tool],
         output_key=OUTPUT_KEY,

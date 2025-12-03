@@ -51,18 +51,22 @@ def get_web_researcher_agent(model):
         mission and vision based on provided company official website url.
         
         ### Output format:
-        If you didn't manage to retreive any information about the company(e.g. uncorrect url)
+        - If you didn't manage to retreive any information about the company(e.g. uncorrect url)
         return JSON error response:
-        {
+        ```json
+        {{
             "status": "error",
             "error_message": "Unable to retrieve information about the company: <The error message>"
-        }
+        }}
+        ```
         
-        If you have successfully retrieved information about the company return JSON response:
-        {
+        - If you have successfully retrieved information about the company return JSON response:
+        ```json
+        {{
             "status": "success",
             "company_info": <Information about the company>
-        }
+        }}
+        ```
         """,
         tools=[google_search],
         output_key=OUTPUT_KEY,

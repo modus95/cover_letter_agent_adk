@@ -75,7 +75,7 @@ st.html("""
 """)
 
 # Settings in sidebar
-model_expander = st.sidebar.expander("**Settings**", expanded=False)
+settings_expander = st.sidebar.expander("**Settings**", expanded=False)
 
 # ---- SESSION STATE ----
 if "generating" not in st.session_state:
@@ -93,15 +93,22 @@ if "is_error" not in st.session_state:
 # --------------------------------------------------------------------
 
 
-async def run_agent(company_url, job_description_url, file_path, model):
+async def run_agent(
+    company_url: str,
+    job_description_url: str,
+    file_path: str,
+    model: str,
+    logging: bool,
+    tavily_advanced_extraction: bool
+) -> str:
     """Run the agent asynchronously."""
     session_service = InMemorySessionService()
 
     runner = Runner(
-        agent=get_root_agent(model),
+        agent=get_root_agent(model, tavily_advanced_extraction),
         app_name=APP_NAME,
         session_service=session_service,
-        plugins=[LoggingPlugin()]
+        plugins=[LoggingPlugin()] if logging else None
     )
 
     # Create a new session
@@ -135,13 +142,20 @@ def main():
     st.title("📝 Cover Letter AI Agent")
     st.divider()
 
-    model_name = model_expander.selectbox(
+    # ----- SIDE BAR -----
+    model_name = settings_expander.selectbox(
         "Gemini Model",
         options=["gemini-2.5-flash-preview-09-2025",
                  "gemini-2.5-flash-lite"],
         index=0
     )
 
+    tavily_advanced_extraction = settings_expander.toggle(
+        "Tavily Advanced Extraction", value=False)
+    settings_expander.divider()
+    logging = settings_expander.toggle("Logging", value=False)
+
+    # ----- MAIN PAGE -----
     left, right = st.columns(
         2,
         gap="medium",
@@ -164,7 +178,6 @@ def main():
         type=["pdf", "doc", "docx"]
     )
 
-    # ---- BUTTON (disabled during generation) ----
     generate_clicked = left.button(
         "Generate Cover Letter",
         disabled=st.session_state.generating,
@@ -196,7 +209,9 @@ def main():
                         company_url,
                         job_description_url,
                         temp_file_path,
-                        model_name
+                        model_name,
+                        logging,
+                        tavily_advanced_extraction
                     )
                 )
 

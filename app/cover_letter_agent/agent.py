@@ -12,7 +12,8 @@ from utils import define_model
 DEFAULT_MODEL_NAME = "gemini-2.5-flash-preview-09-2025"
 
 
-def get_root_agent(model_name: str):
+def get_root_agent(model_name: str,
+                   tavily_advanced_extraction: bool = False):
     """
     Initializes and returns a root agent for cover letter generation.
 
@@ -22,6 +23,7 @@ def get_root_agent(model_name: str):
 
     Args:
         model_name: The name of the language model to be used by the agents.
+        tavily_advanced_extraction: Whether to use Tavily advanced extraction.
 
     Returns:
         A SequentialAgent that orchestrates the web research and cover letter
@@ -35,7 +37,11 @@ def get_root_agent(model_name: str):
     cv_parcer_agent = cvpa.get_cv_parcer_agent(model)
 
     # job_description_agent = jda.get_job_description_agent(model)
-    job_description_agent = jda.get_job_description_agent_tavily(model)
+    job_description_agent = jda.get_job_description_agent_tavily(
+                                            model,
+                                            tavily_advanced_extraction
+                                            )
+
     cl_generator_agent = clg.get_cl_generator_agent(model)
 
     # The ParallelAgent runs all its sub-agents simultaneously.
@@ -54,4 +60,4 @@ def get_root_agent(model_name: str):
     return ra
 
 
-root_agent = get_root_agent(DEFAULT_MODEL_NAME)
+root_agent = get_root_agent(DEFAULT_MODEL_NAME, tavily_advanced_extraction=False)
