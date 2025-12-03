@@ -13,7 +13,14 @@ def get_cl_generator_agent(model):
 
         First things first, check the "status" field in each "ParallelResearchTeam" sub_agent's response:
         - If any of the sub_agents returned status "error", don't generate a cover letter, but let the user
-        know what the reason of the error is.
+        know what the reason of the failure is.
+        Return the response in JSON format:
+        ```json
+        {{
+            "status": "error",
+            "failure_reason": "<The reason of the failure in Markdown format>"
+        }}
+        ```
         
         - If all sub_agents returned status "success", generate a proffessional, well-structured 
         cover letter based on the provided information below:
@@ -38,8 +45,13 @@ def get_cl_generator_agent(model):
         - Closing should include the user's name only. No additional information about user's e-mail, 
           phone number, job title, etc. should be included.
 
-        ### Output format:
-        Return the text formatted for easy copy-pasting into Word document.
+        Return the response in JSON format:
+        ```json
+        {{
+            "status": "success",
+            "cover_letter": "<the cover letter text>"
+        }}
+        ```
         """,
         output_key="cover_letter"
     )

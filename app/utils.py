@@ -1,5 +1,7 @@
 """Utility functions for agent interactions and asynchronous operations."""
 
+import re
+import json
 import tempfile
 import pathlib
 from contextlib import suppress
@@ -94,4 +96,14 @@ async def call_agent_async(
             await agen.close()
 
     return final_response_text
+
+
+def load_json(data):
+    """Extract and load JSON from a string."""
+    try:
+        pat = r'\{[^{}]*(?:{[^{}]*}[^{}]*)*\}'
+        return json.loads(re.search(pat, data).group(0))
+
+    except json.JSONDecodeError:
+        return str(data)
     

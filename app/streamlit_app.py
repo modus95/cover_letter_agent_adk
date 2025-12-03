@@ -216,7 +216,7 @@ def main():
                 )
 
                 # Save the result to session_state (PERSIST)
-                st.session_state.generated_cover_letter = result
+                st.session_state.generated_cover_letter = utils.load_json(result)
 
             except Exception as e:
                 st.session_state.is_error = {
@@ -235,15 +235,28 @@ def main():
 
     # ---- SHOW RESULT IF AVAILABLE ----
     if st.session_state.generated_cover_letter:
-        left.success("Cover Letter Generated Successfully!", icon="✅")
+        agent_result = st.session_state.generated_cover_letter
 
-        right.text_area(
-            "Cover Letter",
-            value=st.session_state.generated_cover_letter,
-            height=500,
-            label_visibility="collapsed"
-        )
-        right.markdown(":red[*Read carefully and make adjustments if needed.]")
+        if (isinstance(agent_result, dict) and
+            agent_result.get("status", "") == "success"):
+
+            left.success("Cover Letter Generated Successfully!", icon="✅")
+
+            right.text_area(
+                "Cover Letter",
+                value=agent_result.get("cover_letter", ""),
+                height=500,
+                label_visibility="collapsed"
+            )
+            right.markdown(":red[*Read carefully and make adjustments if needed.]")
+
+        if (isinstance(agent_result, dict) and
+            agent_result.get("status", "") == "error"):
+
+            left.warning("Cover Letter Generation Failed!", icon="⚠️")
+
+            md = f"*:blue[{agent_result.get('failure_reason', '')}]*"
+            right.markdown(md)
 
     # ---- ERROR MESSAGE ----
     if st.session_state.is_error["error"]:
