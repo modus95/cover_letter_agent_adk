@@ -28,7 +28,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for "fancy" look
+default_border_color = st.get_option("theme.borderColor")
+
+# Custom CSS for "fancy" look and dynamic border colors
 st.html("""
 <style>
     .main {
@@ -70,6 +72,20 @@ st.html("""
     }
     div[data-baseweb="popover"] li, div[data-baseweb="popover"] div {
         font-size: 0.8rem !important;
+    }
+    
+    /* Dynamic border colors based on status */
+    [data-testid="stColumn"]:has([data-status="success"]) {
+        border: 2px solid #4CAF50 !important;
+        border-radius: 10px;
+    }
+    [data-testid="stColumn"]:has([data-status="error"]) {
+        border: 2px solid #FF9800 !important;
+        border-radius: 10px;
+    }
+    [data-testid="stColumn"]:has([data-status="pending"]) {
+        border: 2px solid {default_border_color} !important;
+        border-radius: 10px;
     }
 </style>
 """)
@@ -194,6 +210,8 @@ def main():
                 "error": False,
                 "message": ""
             }
+            left.html('<div data-status="pending" style="display:none;"></div>')
+            right.html('<div data-status="pending" style="display:none;"></div>')
             st.rerun()
 
     # ---- PROCESS GENERATION IF FLAG SET ----
@@ -218,7 +236,7 @@ def main():
                 # Save the result to session_state (PERSIST)
                 st.session_state.generated_cover_letter = utils.load_json(result)
 
-            except Exception as e:
+            except RuntimeError as e:
                 st.session_state.is_error = {
                     "error": True,
                     "message": str(e)
@@ -240,6 +258,10 @@ def main():
         if (isinstance(agent_result, dict) and
             agent_result.get("status", "") == "success"):
 
+            # Add invisible status marker for CSS targeting
+            left.html('<div data-status="success" style="display:none;"></div>')
+            right.html('<div data-status="success" style="display:none;"></div>')
+
             left.success("Cover Letter Generated Successfully!", icon="✅")
 
             right.text_area(
@@ -248,10 +270,14 @@ def main():
                 height=500,
                 label_visibility="collapsed"
             )
-            right.markdown(":red[*Read carefully and make adjustments if needed.]")
+            right.markdown("*:red[*Read carefully and make adjustments if needed.]*")
 
         if (isinstance(agent_result, dict) and
             agent_result.get("status", "") == "error"):
+
+            # Add invisible status marker for CSS targeting
+            left.html('<div data-status="error" style="display:none;"></div>')
+            right.html('<div data-status="error" style="display:none;"></div>')
 
             left.warning("Cover Letter Generation Failed!", icon="⚠️")
 
