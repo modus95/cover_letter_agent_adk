@@ -87,6 +87,12 @@ st.html("""
         border: 2px solid {default_border_color} !important;
         border-radius: 10px;
     }
+    
+    /* Dark-grey border for the text area with agent output */
+    [data-testid="stColumn"] .stTextArea [data-baseweb="textarea"] {
+        border: 2px solid #c1c1c1 !important;
+        border-radius: 10px !important;
+    }    
 </style>
 """)
 
