@@ -28,71 +28,19 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-default_border_color = st.get_option("theme.borderColor")
+default_border_color = st.get_option("theme.borderColor") or "#d6d6d8"
 
 # Custom CSS for "fancy" look and dynamic border colors
-st.html("""
+css_file_path = os.path.join(os.path.dirname(__file__), "style.css")
+with open(css_file_path, encoding="utf-8") as f:
+    css = f.read()
+
+st.html(f"""
 <style>
-    .main {
-        background-color: #f8f9fa;
-    }
-    .stButton>button {
-        width: 100%;
-        background-color: #4CAF50;
-        color: white;
-        font-weight: bold;
-        border-radius: 10px;
-        padding: 0.5rem 1rem;
-        border: none;
-    }
-    .stButton>button:hover {
-        background-color: #45a049;
-    }
-    .stButton>button[disabled] {
-        background-color: #9e9e9e !important;
-        color: #ffffff !important;
-        cursor: not-allowed !important;
-        opacity: 0.85 !important;
-    }
-    .stTextInput>div>div>input {
-        border-radius: 10px;        
-    }
-    .stTextInput label p, .stFileUploader label p {
-        font-size: 1.1rem !important;
-        font-weight: bold;
-    }    
-    h1 {
-        color: #2c3e50;
-        text-align: center;
-        font-family: 'Helvetica Neue', sans-serif;
-    }
-    /* Decrease font size of selectbox options */
-    .stSelectbox div[data-baseweb="select"] > div {
-        font-size: 0.8rem !important;
-    }
-    div[data-baseweb="popover"] li, div[data-baseweb="popover"] div {
-        font-size: 0.8rem !important;
-    }
-    
-    /* Dynamic border colors based on status */
-    [data-testid="stColumn"]:has([data-status="success"]) {
-        border: 2px solid #4CAF50 !important;
-        border-radius: 10px;
-    }
-    [data-testid="stColumn"]:has([data-status="error"]) {
-        border: 2px solid #FF9800 !important;
-        border-radius: 10px;
-    }
-    [data-testid="stColumn"]:has([data-status="pending"]) {
-        border: 2px solid {default_border_color} !important;
-        border-radius: 10px;
-    }
-    
-    /* Dark-grey border for the text area with agent output */
-    [data-testid="stColumn"] .stTextArea [data-baseweb="textarea"] {
-        border: 2px solid #c1c1c1 !important;
-        border-radius: 10px !important;
-    }    
+    :root {{
+        --border-color: {default_border_color};
+    }}
+    {css}
 </style>
 """)
 
@@ -168,6 +116,7 @@ def main():
     model_name = settings_expander.selectbox(
         "Gemini Model",
         options=["gemini-2.5-flash-preview-09-2025",
+                 "gemini-2.5-pro",
                  "gemini-2.5-flash-lite"],
         index=0
     )
