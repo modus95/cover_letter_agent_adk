@@ -179,7 +179,7 @@ def main():
 
     # ----- MAIN PAGE -----
     left, right = st.columns(
-        2,
+        [0.4, 0.6],
         gap="medium",
         vertical_alignment="top",
         border=True
@@ -273,10 +273,16 @@ def main():
             right.text_area(
                 "Cover Letter",
                 value=agent_result.get("cover_letter", ""),
-                height=500,
+                height=450,
                 label_visibility="collapsed"
             )
-            right.markdown("*:red[*Read carefully and make adjustments if needed.]*")
+
+            with right:
+                c1, c2 = st.columns([0.85, 0.15], vertical_alignment="center")
+                with c1:
+                    st.markdown("*:red[*Read carefully and make adjustments if needed.]*")
+                with c2:
+                    utils.st_copy_to_clipboard_button(agent_result.get("cover_letter", ""))
 
         if (isinstance(agent_result, dict) and
             agent_result.get("status", "") == "error"):
