@@ -1,7 +1,7 @@
 """Agent to google search the information about an company."""
 
-import re
 import os
+import json
 import logging
 from typing import Optional
 from dotenv import load_dotenv
@@ -12,6 +12,11 @@ from google.genai import types
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPServerParams
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 
+try:
+    import utils
+except ImportError:
+    from app import utils
+
 
 load_dotenv()
 
@@ -19,27 +24,48 @@ logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+agent_logger = logging.getLogger("agent_output_logger")
+
 OUTPUT_KEY = "job_description"
+LOG_TITLE = "JOB DESCRIPTION"
 
 
 def logging_agent_output_status(callback_context: CallbackContext) -> Optional[types.Content]:
-    """Log agent output status."""
+    """Log agent output"""
 
     current_state = callback_context.state
     output = current_state.get(OUTPUT_KEY)
 
-    status = ""
-    if isinstance(output, dict):
-        status = output.get("status", "")
-    elif isinstance(output, str):
-        match = re.search(r'"status"\s*:\s*"([^\"]+)"', output)
-        if match:
-            status = match.group(1)
+    try:
+        output_json = utils.clean_json_string(output)
+        status = output_json.get("status")
+        job_description = output_json.get(OUTPUT_KEY)
 
-    if status:
-        logger.info("Status: %s", status.upper())
-    else:
-        logger.info("NO `STATUS` IN THE AGENT OUTPUT")
+        if status:
+            logger.info("Status: %s", status.upper())
+        else:
+            logger.info("NO `STATUS` IN THE AGENT OUTPUT")
+            utils.output_logging(agent_logger,
+                           LOG_TITLE + " (Raw JSON)",
+                           str(output_json),
+                           "NO `STATUS` IN THE AGENT OUTPUT")
+            return None
+
+        if job_description:
+            utils.output_logging(agent_logger, LOG_TITLE, job_description)
+        else:
+            utils.output_logging(agent_logger,
+                           LOG_TITLE + " (Raw JSON)",
+                           str(output_json),
+                           "NO `JOB_DESCRIPTION` IN THE AGENT OUTPUT")
+
+    except json.JSONDecodeError as e:
+        utils.output_logging(agent_logger,
+                       LOG_TITLE + " (Raw Output)",
+                       str(output),
+                       str(e))
+
+    return None
 
 
 def get_job_description_agent_tavily(model,

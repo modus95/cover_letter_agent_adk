@@ -1,9 +1,14 @@
 """Utility functions for agent interactions and asynchronous operations."""
 
+import os
 import re
 import json
 import tempfile
 import pathlib
+import logging
+import datetime
+from typing import Optional
+
 from contextlib import suppress
 import streamlit.components.v1 as components
 from google.adk.runners import Runner
@@ -36,6 +41,74 @@ def save_uploaded_file(uploaded_file):
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
         tmp_file.write(uploaded_file.getvalue())
         return tmp_file.name
+
+
+def clean_json_string(json_str: str) -> dict:
+    """Cleans a JSON string by removing markdown code block fences
+    and parses it into a dictionary."""
+
+    clean_json_str = json_str.strip()
+    if clean_json_str.startswith("```json"):
+        clean_json_str = clean_json_str[7:]
+    if clean_json_str.startswith("```"):
+        clean_json_str = clean_json_str[3:]
+    if clean_json_str.endswith("```"):
+        clean_json_str = clean_json_str[:-3]
+
+    return json.loads(clean_json_str.strip())
+
+
+def output_logging(logg: logging.Logger,
+                   ttl: str,
+                   info_str: str,
+                   warning: Optional[str] = None) -> None:
+    """
+    Logs formatted output including a title, separator, optional warning, and information string.
+
+    Args:
+        logg (logging.Logger): The logger instance to use for output.
+        ttl (str): The title or header string for the log output.
+        info_str (str): The main information string to be logged.
+        warning (Optional[str]): An optional warning message. 
+            If provided, it will be logged as a warning.
+    """
+    if not warning:
+        ttl += " / SUCCESS"
+    logg.info(ttl)
+    logg.info("%s", "-" * len(ttl))
+    if warning:
+        logg.warning("%s\n", warning)
+    logg.info("%s\n\n", str(info_str))
+
+
+def setup_agent_output_logger(logfile_name: str):
+    """Setup the logger for agent outputs."""
+    log_dir = os.path.join(os.path.dirname(__file__), "..", "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, logfile_name)
+
+    logger = logging.getLogger("agent_output_logger")
+    logger.setLevel(logging.INFO)
+
+    # Remove existing handlers to prevent duplicate logging
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    # Create file handler which logs even debug messages
+    fh = logging.FileHandler(log_file, mode='w', encoding='utf-8')
+    fh.setLevel(logging.INFO)
+
+    # Create formatter and add it to the handlers
+    formatter = logging.Formatter('%(message)s')
+    fh.setFormatter(formatter)
+
+    # Add the handlers to the logger
+    logger.addHandler(fh)
+    logger.propagate = False
+
+    logger.info("%s", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+    return logger
 
 
 async def process_agent_response(event):

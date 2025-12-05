@@ -19,6 +19,8 @@ nest_asyncio.apply()
 
 APP_NAME = "Cover Letter Agent"
 USER_ID = "streamlit_user"
+LOGFILE_NAME = "agents_output.log"
+
 
 # Page configuration
 st.set_page_config(
@@ -174,6 +176,8 @@ def main():
         with st.spinner(":blue[*Generating cover letter... This may take a minute.*]"):
             try:
                 temp_file_path = utils.save_uploaded_file(uploaded_file)
+
+                utils.setup_agent_output_logger(LOGFILE_NAME)
 
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)

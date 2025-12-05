@@ -1,6 +1,6 @@
 """Agent to parse CV information from a PDF file uploaded by the user"""
 
-import re
+import json
 import logging
 from typing import Optional
 
@@ -8,30 +8,56 @@ from google.adk.agents import LlmAgent
 from google.adk.agents.callback_context import CallbackContext
 from google.genai import types
 
+try:
+    import utils
+except ImportError:
+    from app import utils
+
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+agent_logger = logging.getLogger("agent_output_logger")
+
 OUTPUT_KEY = "cv_info"
+LOG_TITLE = "CV INFO"
 
 
 def logging_agent_output_status(callback_context: CallbackContext) -> Optional[types.Content]:
-    """Log agent output status."""
+    """Log agent output"""
 
     current_state = callback_context.state
     output = current_state.get(OUTPUT_KEY)
 
-    status = ""
-    if isinstance(output, dict):
-        status = output.get("status")
+    try:
+        output_json = utils.clean_json_string(output)
+        status = output_json.get("status")
+        cv_info = output_json.get(OUTPUT_KEY)
 
-    if isinstance(status, str):
-        match = re.search(r'"status"\s*:\s*"([^\"]+)"', output)
-        if match:
-            status = match.group(1)
+        if status:
+            logger.info("Status: %s", status.upper())
+        else:
+            logger.info("NO `STATUS` IN THE AGENT OUTPUT")
+            utils.output_logging(agent_logger,
+                           LOG_TITLE + " (Raw JSON)",
+                           str(output_json),
+                           "NO `STATUS` IN THE AGENT OUTPUT")
+            return None
 
-    logger.info("Status: %s", status.upper())
+        if cv_info:
+            utils.output_logging(agent_logger, LOG_TITLE, cv_info)
+        else:
+            utils.output_logging(agent_logger,
+                           LOG_TITLE + " (Raw JSON)",
+                           str(output_json),
+                           "NO `CV_INFO` IN THE AGENT OUTPUT")
+
+    except json.JSONDecodeError as e:
+        utils.output_logging(agent_logger,
+                       LOG_TITLE + " (Raw Output)",
+                       str(output),
+                       str(e))
 
     return None
 
@@ -55,18 +81,18 @@ def get_cv_parcer_agent(model):
         - If you didn't manage to parse uploaded file (e.g. uncorrect file, no access to the file):
         return JSON error response:
         ```json
-        {{
+        {
             "status": "error",
             "error_message": "Unable to parse uploaded file: <The error message>"
-        }}
+        }
         ```
         
         - If you have successfully parsed uploaded file return JSON response:
         ```json
-        {{
+        {
             "status": "success",
-            "cv_info": <The extracted information>
-        }}
+            "cv_info": <The extracted information in Markdown format>
+        }
         ```   
         """,
         output_key=OUTPUT_KEY,
