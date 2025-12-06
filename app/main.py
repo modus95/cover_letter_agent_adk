@@ -2,13 +2,14 @@
 
 import asyncio
 import argparse
+import os
 
 from dotenv import load_dotenv
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.adk.plugins.logging_plugin import LoggingPlugin
 
-from utils import call_agent_async
+import utils
 from cover_letter_agent.agent import get_root_agent
 
 
@@ -18,6 +19,9 @@ session_service = InMemorySessionService()
 
 APP_NAME = "Cover Letter Agent"
 USER_ID = "slu"
+LOGFILE_NAME = "sub_agents_output.log"
+
+utils.setup_loggers(LOGFILE_NAME)
 
 
 async def main_async(file_name: str, verbose: bool, model_name: str):
@@ -41,8 +45,19 @@ async def main_async(file_name: str, verbose: bool, model_name: str):
     print("Welcome to the cover letter agent!\n")
     print("Please provide the following information:\n")
 
-    company_url = input("Company URL: ")
-    job_description_url = input("Job description URL: ")
+    # Use environment variables if provided, otherwise prompt the user
+    # (for debugging purposes)
+    company_url = os.getenv("COMPANY_URL")
+    if not company_url:
+        company_url = input("Company URL: ")
+    else:
+        print(f"Company URL: {company_url}")
+
+    job_description_url = os.getenv("JOB_DESCRIPTION_URL")
+    if not job_description_url:
+        job_description_url = input("Job description URL: ")
+    else:
+        print(f"Job description URL: {job_description_url}")
 
     prompt = f"""
     ### Company:
@@ -54,7 +69,7 @@ async def main_async(file_name: str, verbose: bool, model_name: str):
 
     print("\nProcessing your request...\n")
     # Process the user query through the agent
-    agent_response = await call_agent_async(
+    agent_response = await utils.call_agent_async(
         runner,
         USER_ID,
         session_id,
@@ -63,7 +78,10 @@ async def main_async(file_name: str, verbose: bool, model_name: str):
     )
 
     print("\nTHE AGENT RESPONSE:\n")
-    print(agent_response)
+    if isinstance(agent_response, str):
+        agent_response = utils.load_json(agent_response)
+    print(agent_response["status"].upper(),":")
+    print(agent_response["message"])
 
 
 if __name__ == "__main__":

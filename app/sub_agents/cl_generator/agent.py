@@ -1,6 +1,11 @@
 """Agent to google search the information about an company."""
 from google.adk.agents import LlmAgent
 
+try:
+    from utils import ResponseContent
+except ImportError:
+    from app.utils import ResponseContent
+
 
 def get_cl_generator_agent(model):
     """Get cover letter generator agent."""
@@ -11,28 +16,18 @@ def get_cl_generator_agent(model):
         description="Agent to generate a cover letter based on provided information",
         instruction="""You are a professional cover letter generator agent.
 
-        First things first, check the "status" field in each "ParallelResearchTeam" sub_agent's response:
-        - If any of the sub_agents returned status "error", don't generate a cover letter, but let the user
-        know what the reason of the failure is.
-        Return the response in JSON format:
-        ```json
-        {{
-            "status": "error",
-            "failure_reason": "<The reason of the failure in Markdown format>"
-        }}
-        ```
-        
-        - If all sub_agents returned status "success", generate a proffessional, well-structured 
-        cover letter based on the provided information below:
-        
+        Yout task is to generate a proffessional, well-structured cover letter based on 
+        the information provided by "ParallelResearchTeam"'s sub agents, and taking into account
+        the important constraints:
+
         ### About company (mission, vision, values):
-        {company_info["company_info"]}
+        {company_info}
         
         ### Job description:
-        {job_description["job_description"]}
+        {job_description}
         
         ### CV:
-        {cv_info["cv_info"]}
+        {cv_info}
 
         ### Constraints:    
         - The cover letter should be short and concise, up to 300 words.        
@@ -42,16 +37,25 @@ def get_cl_generator_agent(model):
         - Don't include any numerical metrics.
         - Don't use complicated phrases. The writing style should correspond to the advanced 
           intermediate English level (B2).     
-        - Closing should include the user's name only. No additional information about user's e-mail, 
-          phone number, job title, etc. should be included.
+        - Don't include any information about user's e-mail, phone number, job title, etc. 
+          in the closing.
 
-        Return the response in JSON format:
-        ```json
-        {{
-            "status": "success",
-            "cover_letter": "<the cover letter text>"
-        }}
-        ```
+        ### Output:
+        **IMPORTANT:**
+        - If ALL "ParallelResearchTeam"'s sub agents have returned the "success" status, then return the
+        generated cover letter text in Markdown format with the "success" status. 
+        - If ANY of the sub_agents has returned the "error" status, don't generate a cover letter, 
+        but return the clear reason of the failure with the "error" status.
+
+        Your response MUST be valid JSON matching the `ResponseContent` structure:
+        {
+            "status": "success" or "error",
+            "message": "The generated cover letter if the status is 'success'. 
+             The error message with the reason of the failure if the status is 'error'"
+        }
+
+        DO NOT include any explanations or additional text outside the JSON response.
         """,
+        output_schema=ResponseContent,
         output_key="cover_letter"
     )

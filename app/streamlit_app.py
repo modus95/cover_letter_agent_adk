@@ -19,7 +19,7 @@ nest_asyncio.apply()
 
 APP_NAME = "Cover Letter Agent"
 USER_ID = "streamlit_user"
-LOGFILE_NAME = "agents_output.log"
+LOGFILE_NAME = "sub_agents_output.log"
 
 
 # Page configuration
@@ -177,7 +177,7 @@ def main():
             try:
                 temp_file_path = utils.save_uploaded_file(uploaded_file)
 
-                utils.setup_agent_output_logger(LOGFILE_NAME)
+                utils.setup_loggers(LOGFILE_NAME)
 
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
@@ -193,7 +193,7 @@ def main():
                 )
 
                 # Save the result to session_state (PERSIST)
-                st.session_state.generated_cover_letter = utils.load_json(result)
+                st.session_state.generated_cover_letter = result
 
             except RuntimeError as e:
                 st.session_state.is_error = {
@@ -213,9 +213,10 @@ def main():
     # ---- SHOW RESULT IF AVAILABLE ----
     if st.session_state.generated_cover_letter:
         agent_result = st.session_state.generated_cover_letter
+        if isinstance(agent_result, str):
+            agent_result = utils.load_json(agent_result)
 
-        if (isinstance(agent_result, dict) and
-            agent_result.get("status", "") == "success"):
+        if agent_result.get("status", "") == "success":
 
             # Add invisible status marker for CSS targeting
             left.html('<div data-status="success" style="display:none;"></div>')
@@ -225,7 +226,7 @@ def main():
 
             right.text_area(
                 "Cover Letter",
-                value=agent_result.get("cover_letter", ""),
+                value=agent_result.get("message", ""),
                 height=450,
                 label_visibility="collapsed"
             )
@@ -235,9 +236,9 @@ def main():
                 with c1:
                     st.markdown("*:red[*Read carefully and make adjustments if needed.]*")
                 with c2:
-                    utils.st_copy_to_clipboard_button(agent_result.get("cover_letter", ""))
+                    utils.st_copy_to_clipboard_button(agent_result.get("message", ""))
 
-        if (isinstance(agent_result, dict) and
+        if (not agent_result or
             agent_result.get("status", "") == "error"):
 
             # Add invisible status marker for CSS targeting
@@ -246,7 +247,10 @@ def main():
 
             left.warning("Cover Letter Generation Failed!", icon="⚠️")
 
-            md = f"*:blue[{agent_result.get('failure_reason', '')}]*"
+            md = "*:blue[The response from the agent is empty! Check logs for more details.]*"
+            if agent_result:
+                md = f"*:blue[{agent_result.get('message', '')}]*"
+
             right.markdown(md)
 
     # ---- ERROR MESSAGE ----

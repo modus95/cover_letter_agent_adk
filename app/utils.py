@@ -7,13 +7,17 @@ import tempfile
 import pathlib
 import logging
 import datetime
-from typing import Optional
 
+from typing import Optional
 from contextlib import suppress
+from pydantic import BaseModel, Field
+
 import streamlit.components.v1 as components
+
 from google.adk.runners import Runner
 from google.genai import types
 from google.adk.models.google_llm import Gemini
+from google.adk.agents.callback_context import CallbackContext
 
 
 RETRY_CONFIG = types.HttpRetryOptions(
@@ -22,6 +26,86 @@ RETRY_CONFIG = types.HttpRetryOptions(
     initial_delay=1,
     http_status_codes=[429, 500, 503, 504], # Retry on these HTTP errors
 )
+
+
+class ResponseContent(BaseModel):
+    """
+    Represents the structured content of an agent's response.
+
+    Attributes:
+        status (str): The status of the agent response, either 'success' or 'error'.
+        message (str): The main content of the agent response if status is 'success',
+                       or the error message if status is 'error'.
+    """
+    status: str = Field(
+        description="The status of the agent response. Should be 'success' or 'error'."
+    )
+    message: str = Field(
+        description=(
+            "The main content of the agent response if the status is 'success'."
+            " The error message if the status is 'error'."
+            )
+    )
+
+
+def load_json(data):
+    """Extract and load JSON from a string."""
+    try:
+        pat = r'\{[^{}]*(?:{[^{}]*}[^{}]*)*\}'
+        return json.loads(re.search(pat, data).group(0))
+
+    except json.JSONDecodeError:
+        return {}
+
+
+def logging_agent_output_status(callback_context: CallbackContext) -> None:
+    """
+    Logs the output status and message of an agent's operation.
+
+    This function extracts the agent's name and its output from the provided
+    `CallbackContext`, determines the status (success or error), and logs
+    the relevant information using a dedicated agent output logger. It handles
+    different agents by mapping their names to specific output keys.
+
+    Args:
+        callback_context (CallbackContext): The context object containing
+                                            the agent's state and name
+    """
+
+    status_logger = logging.getLogger("agent_status_logger")
+    output_logger = logging.getLogger("agent_output_logger")
+
+    output_keys = {
+        "cv_parcer_agent": "cv_info",
+        "job_description_extractor_agent": "job_description",
+        "company_web_researcher": "company_info"
+    }
+
+    current_state = callback_context.state
+    agent_name = callback_context.agent_name
+    agent_output_key = output_keys[agent_name]
+    output_dict = current_state.get(agent_output_key)
+    if isinstance(output_dict, str):
+        output_dict = load_json(output_dict)
+
+    log_title = " ".join(agent_output_key.split("_")).upper()
+
+    try:
+        status = output_dict.get("status")
+        message = output_dict.get("message")
+
+        status_logger.info("%s: %s", agent_name, status.upper())
+        output_logging(output_logger,
+                       f"{log_title} / {status.upper()}",
+                       message)
+
+    except KeyError as ke:
+        output_logging(output_logger,
+                       f"{log_title} / (Raw Output)",
+                       json.dumps(output_dict, indent=4),
+                       str(ke))
+
+    return None
 
 
 def define_model(model_name:str):
@@ -43,21 +127,6 @@ def save_uploaded_file(uploaded_file):
         return tmp_file.name
 
 
-def clean_json_string(json_str: str) -> dict:
-    """Cleans a JSON string by removing markdown code block fences
-    and parses it into a dictionary."""
-
-    clean_json_str = json_str.strip()
-    if clean_json_str.startswith("```json"):
-        clean_json_str = clean_json_str[7:]
-    if clean_json_str.startswith("```"):
-        clean_json_str = clean_json_str[3:]
-    if clean_json_str.endswith("```"):
-        clean_json_str = clean_json_str[:-3]
-
-    return json.loads(clean_json_str.strip())
-
-
 def output_logging(logg: logging.Logger,
                    ttl: str,
                    info_str: str,
@@ -72,8 +141,6 @@ def output_logging(logg: logging.Logger,
         warning (Optional[str]): An optional warning message. 
             If provided, it will be logged as a warning.
     """
-    if not warning:
-        ttl += " / SUCCESS"
     logg.info(ttl)
     logg.info("%s", "-" * len(ttl))
     if warning:
@@ -81,12 +148,20 @@ def output_logging(logg: logging.Logger,
     logg.info("%s\n\n", str(info_str))
 
 
-def setup_agent_output_logger(logfile_name: str):
-    """Setup the logger for agent outputs."""
+def setup_loggers(logfile_name: str):
+    """
+    Sets up logging configuration for the application, creating a log directory
+    and configuring two specific loggers: one for agent outputs and one for agent status.
+
+    Args:
+        logfile_name (str): The name of the log file to be created within the log directory.
+    """
+    #----- AGENT OUTPUT LOGGER -----
     log_dir = os.path.join(os.path.dirname(__file__), "..", "logs")
     os.makedirs(log_dir, exist_ok=True)
     log_file = os.path.join(log_dir, logfile_name)
 
+    logging.basicConfig(level=logging.WARNING)
     logger = logging.getLogger("agent_output_logger")
     logger.setLevel(logging.INFO)
 
@@ -108,7 +183,16 @@ def setup_agent_output_logger(logfile_name: str):
 
     logger.info("%s", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    return logger
+    #----- AGENT STATUS LOGGER -----
+    status_logger = logging.getLogger("agent_status_logger")
+    status_logger.setLevel(logging.INFO)
+    if not status_logger.handlers:
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+        status_logger.addHandler(console_handler)
+    status_logger.propagate = False
+
+    return logger, status_logger
 
 
 async def process_agent_response(event):
@@ -170,16 +254,6 @@ async def call_agent_async(
             await agen.close()
 
     return final_response_text
-
-
-def load_json(data):
-    """Extract and load JSON from a string."""
-    try:
-        pat = r'\{[^{}]*(?:{[^{}]*}[^{}]*)*\}'
-        return json.loads(re.search(pat, data).group(0))
-
-    except json.JSONDecodeError:
-        return str(data)
 
 
 def st_copy_to_clipboard_button(text: str):
