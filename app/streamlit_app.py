@@ -46,8 +46,8 @@ st.html(f"""
 </style>
 """)
 
-# Settings in sidebar
-settings_expander = st.sidebar.expander("**Settings**", expanded=False)
+gemini_expander = st.sidebar.expander("**Gemini model**", expanded=True)
+tavily_expander = st.sidebar.expander("**Tavily Extractor settings**", expanded=False)
 
 # ---- SESSION STATE ----
 if "generating" not in st.session_state:
@@ -115,18 +115,20 @@ def main():
     st.divider()
 
     # ----- SIDE BAR -----
-    model_name = settings_expander.selectbox(
+    model_name = gemini_expander.selectbox(
         "Gemini Model",
         options=["gemini-2.5-flash-preview-09-2025",
                  "gemini-2.5-pro",
                  "gemini-2.5-flash-lite"],
-        index=0
+        index=0,
+        label_visibility="collapsed"
     )
 
-    tavily_advanced_extraction = settings_expander.toggle(
+    tavily_advanced_extraction = tavily_expander.toggle(
         "Tavily Advanced Extraction", value=False)
-    settings_expander.divider()
-    logging = settings_expander.toggle("Logging", value=False)
+
+    # TO DO: move the toggle to the very bottom of the app tab (window)
+    logging = st.sidebar.toggle("Logging", value=False)
 
     # ----- MAIN PAGE -----
     left, right = st.columns(
