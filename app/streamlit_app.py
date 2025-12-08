@@ -63,13 +63,11 @@ if "is_error" not in st.session_state:
     }
 
 # --------------------------------------------------------------------
-
-
 async def run_agent(
     company_url: str,
     job_description_url: str,
     file_path: str,
-    model: str,
+    models: dict,
     logging: bool,
     tavily_advanced_extraction: bool
 ) -> str:
@@ -77,7 +75,7 @@ async def run_agent(
     session_service = InMemorySessionService()
 
     runner = Runner(
-        agent=get_root_agent(model, tavily_advanced_extraction),
+        agent=get_root_agent(models, tavily_advanced_extraction),
         app_name=APP_NAME,
         session_service=session_service,
         plugins=[LoggingPlugin()] if logging else None
@@ -115,14 +113,22 @@ def main():
     st.divider()
 
     # ----- SIDE BAR -----
-    model_name = gemini_expander.selectbox(
-        "Gemini Model",
-        options=["gemini-2.5-flash-preview-09-2025",
-                 "gemini-2.5-pro",
-                 "gemini-2.5-flash-lite"],
-        index=0,
-        label_visibility="collapsed"
-    )
+    models = {
+        "sub_agents_model": gemini_expander.selectbox(
+                            "Sub-agents model",
+                            options=["gemini-3-pro-preview",
+                                    "gemini-2.5-flash-preview-09-2025",
+                                    "gemini-2.5-pro"],
+                            index=1
+                        ),
+        "main_agent_model": gemini_expander.selectbox(
+                            "Main agent model",
+                            options=["gemini-3-pro-preview",
+                                    "gemini-2.5-flash-preview-09-2025",
+                                    "gemini-2.5-pro"],
+                            index=0
+                        )
+    }
 
     tavily_advanced_extraction = tavily_expander.toggle(
         "Tavily Advanced Extraction", value=False)
@@ -187,7 +193,7 @@ def main():
                         company_url,
                         job_description_url,
                         temp_file_path,
-                        model_name,
+                        models,
                         logging,
                         tavily_advanced_extraction
                     )

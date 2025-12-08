@@ -44,8 +44,9 @@ h1 {
     font-size: 0.8rem !important;
 }
 
-.stSelectbox:has(input[aria-label*="Gemini Model"]) label p {
-    font-size: 1rem !important;
+.stSelectbox:has(input[aria-label*="Sub-agents model"]) label p,
+.stSelectbox:has(input[aria-label*="Main agent model"]) label p {
+    font-size: 0.9rem !important;
 }
 
 div[data-baseweb="popover"] li,

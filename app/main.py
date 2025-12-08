@@ -24,14 +24,25 @@ LOGFILE_NAME = "sub_agents_output.log"
 utils.setup_loggers(LOGFILE_NAME)
 
 
-async def main_async(file_name: str, verbose: bool, model_name: str):
+async def main_async(
+    file_name: str,
+    verbose: bool,
+    tavily: bool,
+    ma_model_name: str,
+    sa_model_name: str
+):
     """Main entry point for the cover letter agent."""
 
     plugins = [LoggingPlugin()] if verbose else None
 
+    models = {
+        "sub_agents_model": sa_model_name,
+        "main_agent_model": ma_model_name
+    }
+
     # Initialize the runner
     runner = Runner(
-        agent=get_root_agent(model_name),
+        agent=get_root_agent(models, tavily),
         app_name=APP_NAME,
         session_service=session_service,
         plugins=plugins
@@ -95,11 +106,25 @@ if __name__ == "__main__":
         help="Enable verbose logging"
         )
     parser.add_argument(
+        "-t",
+        "--tavily",
+        default=False,
+        action='store_true',
+        help="Enable tavily advanced extraction"
+        )
+    parser.add_argument(
         "-m",
-        "--model",
+        "--sa_model",
         type=str,
         default="gemini-2.5-flash-preview-09-2025",
-        help="Model name to use"
+        help="Sub-agents model name"
+    )
+    parser.add_argument(
+        "-M",
+        "--ma_model",
+        type=str,
+        default="gemini-3-pro-preview",
+        help="Main agent model name"
     )
     args = parser.parse_args()
 
@@ -108,6 +133,14 @@ if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main_async(args.file_name, args.verbose, args.model))
+        loop.run_until_complete(
+            main_async(
+                args.file_name,
+                args.verbose,
+                args.tavily,
+                args.ma_model,
+                args.sa_model
+            )
+        )
     finally:
         loop.close()
