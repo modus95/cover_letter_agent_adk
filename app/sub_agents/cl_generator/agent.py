@@ -1,4 +1,10 @@
-"""Agent to google search the information about an company."""
+"""
+This module defines the `cl_generator_agent` responsible for generating cover letters
+based on provided company information, job description, and CV details.
+It utilizes an LlmAgent to process inputs and adhere to specific constraints
+for cover letter generation.
+"""
+
 from google.adk.agents import LlmAgent
 
 try:

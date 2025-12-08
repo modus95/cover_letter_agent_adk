@@ -1,4 +1,4 @@
-"""Agent to google search the information about an company."""
+"""Module for creating an LLM agent to generate job descriptions using Tavily MCP tools."""
 
 import os
 from dotenv import load_dotenv
