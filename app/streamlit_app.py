@@ -127,7 +127,6 @@ def main():
     tavily_advanced_extraction = tavily_expander.toggle(
         "Tavily Advanced Extraction", value=False)
 
-    # TO DO: move the toggle to the very bottom of the app tab (window)
     logging = st.sidebar.toggle("Logging", value=False)
 
     # ----- MAIN PAGE -----
