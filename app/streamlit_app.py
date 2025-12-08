@@ -25,7 +25,7 @@ LOGFILE_NAME = "sub_agents_output.log"
 # Page configuration
 st.set_page_config(
     page_title="Cover Letter AI Agent",
-    page_icon="📝",
+    page_icon="📃",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -46,7 +46,7 @@ st.html(f"""
 </style>
 """)
 
-gemini_expander = st.sidebar.expander("**Gemini model**", expanded=True)
+gemini_expander = st.sidebar.expander("**Gemini model**", expanded=False)
 tavily_expander = st.sidebar.expander("**Tavily Extractor settings**", expanded=False)
 
 # ---- SESSION STATE ----
@@ -109,8 +109,7 @@ async def run_agent(
 def main():
     """Main entry point for the Streamlit app."""
 
-    st.title("📝 Cover Letter AI Agent")
-    st.divider()
+    st.subheader(":blue[*Cover Letter AI Agent*]", divider="blue")
 
     # ----- SIDE BAR -----
     models = {
