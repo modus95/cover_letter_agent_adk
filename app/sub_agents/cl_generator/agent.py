@@ -20,22 +20,26 @@ def get_cl_generator_agent(model):
         name="cl_generator_agent",
         model=model,
         description="Agent to generate a cover letter based on provided information",
-        instruction="""You are a professional cover letter generator agent.
+        instruction=\
+        """You are a professional cover letter generator agent.
 
         Yout task is to generate a proffessional, well-structured cover letter based on 
         the information provided by "ParallelResearchTeam"'s sub agents, and taking into account
         the important constraints:
 
-        ### About company (mission, vision, values):
+        <About company (mission, vision, values)>
         {company_info}
+        </About company (mission, vision, values)>        
         
-        ### Job description:
+        <Job description>
         {job_description}
+        </Job description>
         
-        ### CV:
+        <CV>
         {cv_info}
-
-        ### Constraints:    
+        </CV>
+        
+        <Constraints>    
         - The cover letter should be short and concise, up to 300 words.        
         - Start the letter with a greeting (e.g. "Dear ..."). Don't include any additional placeholders 
           for date, subject line, company name, company address, etc. at the very beginning of the letter.
@@ -45,8 +49,9 @@ def get_cl_generator_agent(model):
           intermediate English level (B2).     
         - Don't include any information about user's e-mail, phone number, job title, etc. 
           in the closing.
+        </Constraints>
 
-        ### Output:
+        <Output>
         **IMPORTANT:**
         - If ALL "ParallelResearchTeam"'s sub agents have returned the "success" status, then return the
         generated cover letter text in Markdown format with the "success" status. 
@@ -61,6 +66,7 @@ def get_cl_generator_agent(model):
         }
 
         DO NOT include any explanations or additional text outside the JSON response.
+        </Output>
         """,
         output_schema=ResponseContent,
         output_key="cover_letter"
