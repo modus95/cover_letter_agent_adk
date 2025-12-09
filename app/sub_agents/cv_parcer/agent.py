@@ -1,39 +1,11 @@
 """Agent to parse CV information from a PDF file uploaded by the user"""
 
-import re
-import logging
-from typing import Optional
-
 from google.adk.agents import LlmAgent
-from google.adk.agents.callback_context import CallbackContext
-from google.genai import types
 
-
-logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-OUTPUT_KEY = "cv_info"
-
-
-def logging_agent_output_status(callback_context: CallbackContext) -> Optional[types.Content]:
-    """Log agent output status."""
-
-    current_state = callback_context.state
-    output = current_state.get(OUTPUT_KEY)
-
-    status = ""
-    if isinstance(output, dict):
-        status = output.get("status")
-
-    if isinstance(status, str):
-        match = re.search(r'"status"\s*:\s*"([^\"]+)"', output)
-        if match:
-            status = match.group(1)
-
-    logger.info("Status: %s", status.upper())
-
-    return None
+try:
+    from utils import ResponseContent, logging_agent_output_status
+except ImportError:
+    from app.utils import ResponseContent, logging_agent_output_status
 
 
 def get_cv_parcer_agent(model):
@@ -51,20 +23,18 @@ def get_cv_parcer_agent(model):
             - Work Experience
             - Education
 
-        ### Output format:
-        If you didn't manage to parse uploaded file (e.g. uncorrect file, no access to the file):
-        return JSON error response:
+        If you have successfully parsed the uploaded file, return the extracted information in Markdown format with the
+        "success" status. Otherwise, return the error message with the "error" status.
+
+        IMPORTANT: Your response MUST be valid JSON matching the `ResponseContent` structure:
         {
-            "status": "error",
-            "error_message": "Unable to parse uploaded file: <The error message>"
+            "status": "success" or "error",
+            "message": "The main content of the agent response if the status is 'success'. The error message if the status is 'error'"
         }
-        
-        If you have successfully parsed uploaded file return JSON response:
-        {   
-            "status": "success",
-            "cv_info": <The extracted information>
-        }   
+
+        DO NOT include any explanations or additional text outside the JSON response.
         """,
-        output_key=OUTPUT_KEY,
+        output_schema=ResponseContent,
+        output_key="cv_info",
         after_agent_callback=logging_agent_output_status
     )

@@ -1,4 +1,5 @@
 """This module defines AI agents and models for generating cover letters, utilizing Google ADK."""
+from typing import Optional
 
 from google.adk.agents import ParallelAgent, SequentialAgent
 import sub_agents.web_researcher.agent as res
@@ -12,7 +13,8 @@ from utils import define_model
 DEFAULT_MODEL_NAME = "gemini-2.5-flash-preview-09-2025"
 
 
-def get_root_agent(model_name: str):
+def get_root_agent(models: Optional[str | dict],
+                   tavily_advanced_extraction: bool = False):
     """
     Initializes and returns a root agent for cover letter generation.
 
@@ -21,22 +23,33 @@ def get_root_agent(model_name: str):
     It configures retry options for API calls.
 
     Args:
-        model_name: The name of the language model to be used by the agents.
+        models: A string representing the model name to be used by all agents, 
+        or a dictionary specifying different models for sub-agents and the main agent 
+        (e.g., `{"sub_agents_model": "model_name_1", "main_agent_model": "model_name_2"}`).
+
+        tavily_advanced_extraction: Whether to use Tavily advanced extraction.
 
     Returns:
         A SequentialAgent that orchestrates the web research and cover letter
         writing process.
     """
-
-    model = define_model(model_name)
+    if isinstance(models, str):
+        sa_model = ma_model = define_model(models)
+    else:
+        sa_model = define_model(models["sub_agents_model"])
+        ma_model = define_model(models["main_agent_model"])
 
     #SUB-AGENTS:
-    web_researcher_agent = res.get_web_researcher_agent(model)
-    cv_parcer_agent = cvpa.get_cv_parcer_agent(model)
+    web_researcher_agent = res.get_web_researcher_agent(sa_model)
+    cv_parcer_agent = cvpa.get_cv_parcer_agent(sa_model)
 
     # job_description_agent = jda.get_job_description_agent(model)
-    job_description_agent = jda.get_job_description_agent_tavily(model)
-    cl_generator_agent = clg.get_cl_generator_agent(model)
+    job_description_agent = jda.get_job_description_agent_tavily(
+                                            sa_model,
+                                            tavily_advanced_extraction
+                                            )
+
+    cl_generator_agent = clg.get_cl_generator_agent(ma_model)
 
     # The ParallelAgent runs all its sub-agents simultaneously.
     parallel_research_team = ParallelAgent(
@@ -54,4 +67,4 @@ def get_root_agent(model_name: str):
     return ra
 
 
-root_agent = get_root_agent(DEFAULT_MODEL_NAME)
+root_agent = get_root_agent(DEFAULT_MODEL_NAME, tavily_advanced_extraction=False)

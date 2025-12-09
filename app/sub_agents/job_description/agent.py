@@ -1,61 +1,35 @@
-"""Agent to google search the information about an company."""
+"""Module for creating an LLM agent to generate job descriptions using Tavily MCP tools."""
 
-import re
 import os
-import logging
-from typing import Optional
-from dotenv import load_dotenv
 
 from google.adk.agents import LlmAgent
-from google.adk.agents.callback_context import CallbackContext
-from google.genai import types
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPServerParams
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 
-
-load_dotenv()
-
-logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-OUTPUT_KEY = "job_description"
+try:
+    from utils import ResponseContent, logging_agent_output_status
+except ImportError:
+    from app.utils import ResponseContent, logging_agent_output_status
 
 
-def logging_agent_output_status(callback_context: CallbackContext) -> Optional[types.Content]:
-    """Log agent output status."""
-
-    current_state = callback_context.state
-    output = current_state.get(OUTPUT_KEY)
-
-    status = ""
-    if isinstance(output, dict):
-        status = output.get("status", "")
-    elif isinstance(output, str):
-        match = re.search(r'"status"\s*:\s*"([^\"]+)"', output)
-        if match:
-            status = match.group(1)
-
-    if status:
-        logger.info("Status: %s", status.upper())
-    else:
-        logger.info("NO `STATUS` IN THE AGENT OUTPUT")
-
-
-def get_job_description_agent_tavily(model):
+def get_job_description_agent_tavily(model,
+                                     tavily_advanced_extraction):
     """
     Creates an LLM agent for generating job descriptions using Tavily MCP tools.
 
     Args: model: The language model to be used.
+    tavily_advanced_extraction: Whether to use Tavily advanced extraction.
     Returns: LlmAgent
     """
+
+    extract_depth = "advanced" if tavily_advanced_extraction else "basic"
 
     mcp_tavily_tool = McpToolset(
             connection_params=StreamableHTTPServerParams(
                 url="https://mcp.tavily.com/mcp/",
                 headers={
                     "Authorization": f"Bearer {os.getenv('TAVILY_API_KEY')}",
-                },
+                }
             ),
             # tool_filter=['tavily_extract'], # causes "MALFORMED_FUNCTION_CALL"
         )
@@ -65,33 +39,31 @@ def get_job_description_agent_tavily(model):
         model=model,
         description="Agent to extract job description content from provided Company URL",
         instruction=\
-        """You are a job description extractor agent.
+        f"""You are a job description extractor agent.
         Your task is to extract the job description content from the provided Company URL,
-        using 'mcp_tavily_tool' tool. 
+        using 'mcp_tavily_tool' tool. In addition to "urls" use the following args for
+        a function call: 
+        {{
+            "extract_depth": "{extract_depth}",
+            "format": "text"
+        }}
 
-        Respond ONLY with job description text, don't include any additional information
-        (e.g. tool name, tool description, etc.) or any other text.
-        For the response use the output format below.
+        If you have successfully extracted the job description, return the extracted text with the
+        "success" status. Otherwise, return the error message with the "error" status.
 
-        ### Output format:
-        - If you didn't manage to extract job description (e.g. uncorrect URL,
-        no access to the URL, etc.), return JSON error response:
-        {
-            "status": "error",
-            "error_message": "Unable to extract job description from provided URL:
-                             <The error message>"
-        }
-        
-        - If you have successfully extracted job description, return JSON response:
-        {
-            "status": "success",
-            "job_description": <The text of job description ONLY.
-                                Don't include your thoughts, any additional information
-                                or any other text>
-        }   
+        IMPORTANT: Your response MUST be valid JSON matching the `ResponseContent` structure:
+        {{
+            "status": "success" or "error",
+            "message": The text of the job description ONLY if the status is 'success' 
+                       (don't include your thoughts, explanations or any additional information). 
+                       The error message if the status is 'error'"
+        }}
+
+        DO NOT include any explanations or additional text outside the JSON response.
         """,
+        output_schema=ResponseContent,
         tools=[mcp_tavily_tool],
-        output_key=OUTPUT_KEY,
+        output_key="job_description",
         after_agent_callback=logging_agent_output_status
     )
 
@@ -107,26 +79,21 @@ def get_job_description_agent(model):
         """You are a job description extractor agent.
         Your task is to extract the job description text from the provided website URL.
 
-        Respond ONLY with job description text, don't include any additional information
-        or any other text. For the response use the output format below.
-        
-        ### Output format:
-        - If you didn't manage to extract job description (e.g. uncorrect URL,
-        no access to the URL, etc.), return JSON error response:
-        {
-            "status": "error",
-            "error_message": "Unable to extract job description from provided URL:
-                              <The error message>"
-        }
-        
-        - If you have successfully extracted job description, return JSON response:
-        {
-            "status": "success",
-            "job_description": <The text of job description ONLY.
-                                Don't include your thoughts, any additional information
-                                or any other text>
-        }   
+        If you have successfully extracted the job description, return the extracted text 
+        in Markdown format with the "success" status. 
+        Otherwise, return the error message with the "error" status.
+
+        IMPORTANT: Your response MUST be valid JSON matching the `ResponseContent` structure:
+        {{
+            "status": "success" or "error",
+            "message": The text of the job description ONLY if the status is 'success' 
+                       (don't include your thoughts, explanations or any additional information). 
+                       The error message if the status is 'error'"
+        }}
+
+        DO NOT include any explanations or additional text outside the JSON response.
         """,
-        output_key=OUTPUT_KEY,
+        output_schema=ResponseContent,
+        output_key="job_description",
         after_agent_callback=logging_agent_output_status
     )

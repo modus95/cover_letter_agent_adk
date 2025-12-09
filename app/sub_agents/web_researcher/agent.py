@@ -1,41 +1,12 @@
 """Agent to google search the information about an company."""
 
-import re
-import logging
-from typing import Optional
-
 from google.adk.agents import LlmAgent
 from google.adk.tools import google_search
-from google.adk.agents.callback_context import CallbackContext
-from google.genai import types
 
-
-logging.basicConfig(level=logging.WARNING)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-
-OUTPUT_KEY = "company_info"
-
-
-def logging_agent_output_status(callback_context: CallbackContext) -> Optional[types.Content]:
-    """Log agent output status."""
-
-    current_state = callback_context.state
-    output = current_state.get(OUTPUT_KEY)
-
-    status = ""
-    if isinstance(output, dict):
-        status = output.get("status")
-
-    if isinstance(status, str):
-        match = re.search(r'"status"\s*:\s*"([^\"]+)"', output)
-        if match:
-            status = match.group(1)
-
-    logger.info("Status: %s", status.upper())
-
-    return None
+try:
+    from utils import logging_agent_output_status
+except ImportError:
+    from app.utils import logging_agent_output_status
 
 
 def get_web_researcher_agent(model):
@@ -47,24 +18,25 @@ def get_web_researcher_agent(model):
         description="Agent to google search the information about an company",
         instruction=\
         """You are a web researcher agent. Your only job is to use the
-        google_search tool to find information about a company, its culture, values,
-        mission and vision based on provided company official website url.
-        
-        ### Output format:
-        If you didn't manage to retreive any information about the company(e.g. uncorrect url)
-        return JSON error response:
+        `google_search` tool to find information about a company, its culture, values,
+        mission and vision based on the provided company official website url.
+
+        If you have successfully found the information about a company, 
+        return the information in Markdown format with the "success" status. 
+        Otherwise, return the error message with the "error" status.
+
+        IMPORTANT: Your response MUST be valid JSON matching the following structure:
         {
-            "status": "error",
-            "error_message": "Unable to retrieve information about the company: <The error message>"
+            "status": "success" or "error",
+            "message": "The main content of the agent response if the status is 'success'. 
+                        The error message if the status is 'error'"
         }
-        
-        If you have successfully retrieved information about the company return JSON response:
-        {
-            "status": "success",
-            "company_info": <Information about the company>
-        }
+
+        DO NOT include any explanations or additional text outside the JSON response.
         """,
+        # Can't use `output_schema` here due to the conflit with the using tools (`google_search`)
+        # output_schema=ResponseContent,
         tools=[google_search],
-        output_key=OUTPUT_KEY,
+        output_key="company_info",
         after_agent_callback=logging_agent_output_status
     )

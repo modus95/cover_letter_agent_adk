@@ -1,0 +1,103 @@
+.main {
+    background-color: #f8f9fa;
+}
+
+.stButton>button {
+    width: 100%;
+    background-color: #4CAF50;
+    color: white;
+    font-weight: bold;
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    border: none;
+}
+
+.stButton>button:hover {
+    background-color: #45a049;
+}
+
+.stButton>button[disabled] {
+    background-color: #9e9e9e !important;
+    color: #ffffff !important;
+    cursor: not-allowed !important;
+    opacity: 0.85 !important;
+}
+
+.stTextInput>div>div>input {
+    border-radius: 10px;
+}
+
+.stTextInput label p,
+.stFileUploader label p {
+    font-size: 1.1rem !important;
+    font-weight: bold;
+}
+
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    font-family: 'Helvetica Neue', sans-serif;
+}
+
+/* Decrease font size of selectbox options */
+.stSelectbox div[data-baseweb="select"]>div {
+    font-size: 0.8rem !important;
+}
+
+.stSelectbox:has(input[aria-label*="Sub-agents model"]) label p,
+.stSelectbox:has(input[aria-label*="Main agent model"]) label p {
+    font-size: 0.9rem !important;
+}
+
+div[data-baseweb="popover"] li,
+div[data-baseweb="popover"] div {
+    font-size: 0.8rem !important;
+}
+
+[data-testid="stExpander"] {
+    border: 2px solid rgb(28, 131, 225) !important;
+    border-radius: 8px;
+}
+
+/* Dynamic border colors based on status */
+[data-testid="stColumn"]:has([data-status="success"]) {
+    border: 2px solid #4CAF50 !important;
+    border-radius: 10px;
+}
+
+[data-testid="stColumn"]:has([data-status="error"]) {
+    border: 2px solid #FF9800 !important;
+    border-radius: 10px;
+}
+
+[data-testid="stColumn"]:has([data-status="pending"]) {
+    border: 2px solid var(--border-color) !important;
+    border-radius: 10px;
+}
+
+/* Dark-grey border for the text area with agent output */
+[data-testid="stColumn"] .stTextArea [data-baseweb="textarea"] {
+    border: 2px solid #c1c1c1 !important;
+    border-radius: 10px !important;
+}
+
+/* Move Logging toggle to the bottom of the sidebar */
+/* Target the vertical block that contains the Logging toggle (sidebar main block) */
+[data-testid="stVerticalBlock"]:has(input[aria-label="*Logging*"]) {
+    min-height: 90vh;
+    /* Ensure the container takes up mostly full height */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Push the toggle container to the bottom */
+.stElementContainer:has(input[aria-label="*Logging*"]) {
+    margin-top: auto;
+    padding-bottom: 2rem;
+}
+
+/* "Logging" toggle label style */
+.stCheckbox:has(input[aria-label="*Logging*"]) label p {
+    font-size: 0.9rem !important;
+    color: rgb(28, 131, 225) !important;
+}
