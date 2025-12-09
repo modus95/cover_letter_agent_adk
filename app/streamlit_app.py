@@ -46,8 +46,8 @@ st.html(f"""
 </style>
 """)
 
-gemini_expander = st.sidebar.expander("**Gemini model**", expanded=False)
-tavily_expander = st.sidebar.expander("**Tavily Extractor settings**", expanded=False)
+gemini_expander = st.sidebar.expander(":blue[**Gemini model**]", expanded=False)
+tavily_expander = st.sidebar.expander(":blue[**Tavily Extractor settings**]", expanded=False)
 
 # ---- SESSION STATE ----
 if "generating" not in st.session_state:
@@ -109,7 +109,9 @@ async def run_agent(
 def main():
     """Main entry point for the Streamlit app."""
 
-    st.subheader(":blue[*Cover Letter AI Agent*]", divider="blue")
+    t1, t2 = st.columns([0.96, 0.04], vertical_alignment="bottom")
+    t1.subheader(":blue[*Cover Letter AI Agent*]", divider="blue")
+    t2.image("adk_logo.png", width="content")
 
     # ----- SIDE BAR -----
     models = {
@@ -130,9 +132,9 @@ def main():
     }
 
     tavily_advanced_extraction = tavily_expander.toggle(
-        "Tavily Advanced Extraction", value=False)
+        "Advanced extraction", value=False)
 
-    logging = st.sidebar.toggle("Logging", value=False)
+    logging = st.sidebar.toggle("*Logging*", value=False)
 
     # ----- MAIN PAGE -----
     left, right = st.columns(

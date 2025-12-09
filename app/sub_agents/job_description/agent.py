@@ -1,7 +1,6 @@
 """Module for creating an LLM agent to generate job descriptions using Tavily MCP tools."""
 
 import os
-from dotenv import load_dotenv
 
 from google.adk.agents import LlmAgent
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPServerParams
@@ -11,9 +10,6 @@ try:
     from utils import ResponseContent, logging_agent_output_status
 except ImportError:
     from app.utils import ResponseContent, logging_agent_output_status
-
-
-load_dotenv()
 
 
 def get_job_description_agent_tavily(model,

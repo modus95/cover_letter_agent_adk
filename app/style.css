@@ -54,6 +54,11 @@ div[data-baseweb="popover"] div {
     font-size: 0.8rem !important;
 }
 
+[data-testid="stExpander"] {
+    border: 2px solid rgb(28, 131, 225) !important;
+    border-radius: 8px;
+}
+
 /* Dynamic border colors based on status */
 [data-testid="stColumn"]:has([data-status="success"]) {
     border: 2px solid #4CAF50 !important;
@@ -78,14 +83,21 @@ div[data-baseweb="popover"] div {
 
 /* Move Logging toggle to the bottom of the sidebar */
 /* Target the vertical block that contains the Logging toggle (sidebar main block) */
-[data-testid="stVerticalBlock"]:has(input[aria-label="Logging"]) {
-    min-height: 90vh; /* Ensure the container takes up mostly full height */
+[data-testid="stVerticalBlock"]:has(input[aria-label="*Logging*"]) {
+    min-height: 90vh;
+    /* Ensure the container takes up mostly full height */
     display: flex;
     flex-direction: column;
 }
 
 /* Push the toggle container to the bottom */
-.stElementContainer:has(input[aria-label="Logging"]) {
+.stElementContainer:has(input[aria-label="*Logging*"]) {
     margin-top: auto;
     padding-bottom: 2rem;
+}
+
+/* "Logging" toggle label style */
+.stCheckbox:has(input[aria-label="*Logging*"]) label p {
+    font-size: 0.9rem !important;
+    color: rgb(28, 131, 225) !important;
 }
