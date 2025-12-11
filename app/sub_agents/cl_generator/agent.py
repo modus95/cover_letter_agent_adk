@@ -13,12 +13,13 @@ except ImportError:
     from app.utils import ResponseContent
 
 
-def get_cl_generator_agent(model):
+def get_cl_generator_agent(model, planner=None) -> LlmAgent:
     """Get cover letter generator agent."""
 
     return LlmAgent(
         name="cl_generator_agent",
         model=model,
+        planner=planner,
         description="Agent to generate a cover letter based on provided information",
         instruction=\
         """You are a professional cover letter generator agent.

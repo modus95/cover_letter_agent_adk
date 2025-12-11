@@ -9,12 +9,13 @@ except ImportError:
     from app.utils import logging_agent_output_status
 
 
-def get_web_researcher_agent(model):
+def get_web_researcher_agent(model, planner=None):
     """Get web researcher agent."""
 
     return LlmAgent(
         name="company_web_researcher",
         model=model,
+        planner=planner,
         description="Agent to google search the information about an company",
         instruction=\
         """You are a web researcher agent. Your only job is to use the
