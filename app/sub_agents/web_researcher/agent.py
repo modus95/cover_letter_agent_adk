@@ -3,11 +3,6 @@
 from google.adk.agents import LlmAgent
 from google.adk.tools import google_search
 
-try:
-    from utils import logging_agent_output_status
-except ImportError:
-    from app.utils import logging_agent_output_status
-
 
 def get_web_researcher_agent(model, planner=None):
     """Get web researcher agent."""
@@ -39,5 +34,4 @@ def get_web_researcher_agent(model, planner=None):
         # output_schema=ResponseContent,
         tools=[google_search],
         output_key="company_info",
-        after_agent_callback=logging_agent_output_status
     )

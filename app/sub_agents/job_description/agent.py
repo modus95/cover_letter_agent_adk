@@ -6,10 +6,29 @@ from google.adk.agents import LlmAgent
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPServerParams
 from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
 
-try:
-    from utils import logging_agent_output_status
-except ImportError:
-    from app.utils import logging_agent_output_status
+
+class PickleableMcpToolset(McpToolset):
+    """
+    A wrapper around McpToolset that ensures it can be pickled by Pydantic/pickle.
+    It saves initialization parameters and re-initializes itself upon deserialization.
+    """
+    def __init__(self, **kwargs):
+        self._init_kwargs = kwargs
+        super().__init__(**kwargs)
+
+    def __getstate__(self):
+        """Return state for pickling, excluding unpickleable internal state."""
+        return {"_init_kwargs": self._init_kwargs}
+
+    def __setstate__(self, state):
+        """Restore state and re-initialize."""
+        self._init_kwargs = state["_init_kwargs"]
+        # Re-call init to re-establish connections/loggers
+        try:
+            super().__init__(**self._init_kwargs)
+        except Exception as e:
+            # Fallback or logging if needed during unpickling
+            print(f"Warning: Failed to re-initialize McpToolset during unpickling: {e}")
 
 
 def get_job_description_agent_tavily(model,
@@ -29,7 +48,7 @@ def get_job_description_agent_tavily(model,
 
     extract_depth = "advanced" if tavily_advanced_extraction else "basic"
 
-    mcp_tavily_tool = McpToolset(
+    mcp_tavily_tool = PickleableMcpToolset(
             connection_params=StreamableHTTPServerParams(
                 url="https://mcp.tavily.com/mcp/",
                 headers={
@@ -72,37 +91,4 @@ def get_job_description_agent_tavily(model,
         # output_schema=ResponseContent,
         tools=[mcp_tavily_tool],
         output_key="job_description",
-        after_agent_callback=logging_agent_output_status
-    )
-
-
-def get_job_description_agent(model):
-    """Get job description extractor agent."""
-
-    return LlmAgent(
-        name="job_description_extractor_agent",
-        model=model,
-        description="Agent to extract job description text from provided website URL",
-        instruction=\
-        """You are a job description extractor agent.
-        Your task is to extract the job description text from the provided website URL.
-
-        If you have successfully extracted the job description, return the extracted text 
-        in Markdown format with the "success" status. 
-        Otherwise, return the error message with the "error" status.
-
-        IMPORTANT: Your response MUST be valid JSON matching the following structure:
-        {{
-            "status": "success" or "error",
-            "message": 
-                - The text of the job description ONLY if the status is 'success' 
-                  (don't include your thoughts, explanations or any additional information). 
-                - The error message, including a reason of the failure, if the status is 'error'"
-        }}
-
-        DO NOT include any explanations or additional text outside the JSON response.
-        """,
-        # output_schema=ResponseContent,
-        output_key="job_description",
-        after_agent_callback=logging_agent_output_status
     )

@@ -8,9 +8,9 @@ for cover letter generation.
 from google.adk.agents import LlmAgent
 
 try:
-    from utils import ResponseContent
+    from vertex_utils import ResponseContent
 except ImportError:
-    from app.utils import ResponseContent
+    from app.vertex_utils import ResponseContent
 
 
 def get_cl_generator_agent(model, planner=None) -> LlmAgent:

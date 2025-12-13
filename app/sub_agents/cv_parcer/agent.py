@@ -3,9 +3,9 @@
 from google.adk.agents import LlmAgent
 
 try:
-    from utils import ResponseContent, logging_agent_output_status
+    from vertex_utils import ResponseContent
 except ImportError:
-    from app.utils import ResponseContent, logging_agent_output_status
+    from app.vertex_utils import ResponseContent
 
 
 def get_cv_parcer_agent(model, planner=None):
@@ -36,6 +36,5 @@ def get_cv_parcer_agent(model, planner=None):
         DO NOT include any explanations or additional text outside the JSON response.
         """,
         output_schema=ResponseContent,
-        output_key="cv_info",
-        after_agent_callback=logging_agent_output_status
+        output_key="cv_info"
     )

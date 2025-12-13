@@ -7,12 +7,11 @@ interaction with the agent engine.
 
 import os
 import argparse
-from dotenv import load_dotenv
 
 import vertexai
 from vertexai import agent_engines
-from vertexai.preview import reasoning_engines
 from cover_letter_agent.agent import root_agent
+from dotenv import load_dotenv
 
 
 load_dotenv()
@@ -27,30 +26,31 @@ def create(**kwargs) -> None:
     agent_name = kwargs["agent_name"]
 
     # Wrap the agent in AdkApp
-    adk_app = reasoning_engines.AdkApp(
+    adk_app = agent_engines.AdkApp(
         agent=root_agent,
         enable_tracing=True,
     )
 
     # Deploy to Agent Engine
-    remote_app = agent_engines.create(
+    remote_agent = agent_engines.create(
         agent_engine=adk_app,
         display_name=agent_name,
         description="Agent to generate a cover letter based on provided information",
-        requirements="./requirements.txt",
+        requirements=[
+            "google-cloud-aiplatform[adk,agent_engines]",
+            "pydantic"
+        ],
         extra_packages=[
-            "./utils.py",
+            "./vertex_utils.py",
             "./sub_agents",
             "./cover_letter_agent",
         ],
-        # env_vars={
-        #     "GOOGLE_CLOUD_PROJECT": project_id,
-        #     "GOOGLE_CLOUD_LOCATION": location,
-        #     "GOOGLE_GENAI_USE_VERTEXAI": "True"
-        # }
+        env_vars={
+            "TAVILY_API_KEY": os.getenv("TAVILY_API_KEY"),
+        }
     )
-
-    print(f"Created remote app: {remote_app.resource_name}")
+    print("✅ Agent deployed successfully!")
+    print(f"🆔 Agent Engine ID: {remote_agent.resource_name}")
 
 
 def delete(**kwargs) -> None:
