@@ -8,12 +8,13 @@ except ImportError:
     from app.utils import ResponseContent, logging_agent_output_status
 
 
-def get_cv_parcer_agent(model):
+def get_cv_parcer_agent(model, planner=None):
     """Get CV parcer agent."""
 
     return LlmAgent(
         name="cv_parcer_agent",
         model=model,
+        planner=planner,
         description="Agent to parse CV information from a PDF file uploaded by the user",
         instruction="""You are a CV PDF parser agent.
         Your task is to parse (define the text content of) the uploaded PDF file to extract the following information:

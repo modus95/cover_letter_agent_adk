@@ -117,17 +117,17 @@ def main():
     models = {
         "sub_agents_model": gemini_expander.selectbox(
                             "Sub-agents model",
-                            options=["gemini-3-pro-preview",
-                                    "gemini-2.5-flash-preview-09-2025",
-                                    "gemini-2.5-pro"],
-                            index=1
+                            options=["gemini-2.5-flash-preview-09-2025",
+                                    "gemini-2.5-pro",
+                                    "gemini-3-pro-preview (Low thinking)"],
+                            index=0
                         ),
         "main_agent_model": gemini_expander.selectbox(
                             "Main agent model",
-                            options=["gemini-3-pro-preview",
-                                    "gemini-2.5-flash-preview-09-2025",
-                                    "gemini-2.5-pro"],
-                            index=0
+                            options=["gemini-2.5-flash-preview-09-2025",
+                                    "gemini-2.5-pro",
+                                    "gemini-3-pro-preview (Low thinking)"],
+                            index=2
                         )
     }
 

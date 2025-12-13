@@ -1,14 +1,18 @@
 """This module defines AI agents and models for generating cover letters, utilizing Google ADK."""
+import logging
 from typing import Optional
 
 from google.adk.agents import ParallelAgent, SequentialAgent
+
 import sub_agents.web_researcher.agent as res
 import sub_agents.cv_parcer.agent as cvpa
 import sub_agents.job_description.agent as jda
 import sub_agents.cl_generator.agent as clg
 
-from utils import define_model
+from utils import define_model, get_planner
 
+
+status_logger = logging.getLogger("agent_status_logger")
 
 DEFAULT_MODEL_NAME = "gemini-2.5-flash-preview-09-2025"
 
@@ -39,17 +43,36 @@ def get_root_agent(models: Optional[str | dict],
         sa_model = define_model(models["sub_agents_model"])
         ma_model = define_model(models["main_agent_model"])
 
+    sa_planner = get_planner(sa_model)
+    ma_planner = get_planner(ma_model)
+
+    # Logging the models and planners 
+    status_logger.info("Sub-agents models: %s", sa_model.model)
+    if sa_planner:
+        status_logger.info("Sub-agents thinking level: %s",
+                           sa_planner.thinking_config.thinking_level)
+    else:
+        status_logger.info("Sub-agents planner: None")
+
+    status_logger.info("Main agent model: %s", ma_model.model)
+    if ma_planner:
+        status_logger.info("Main agent thinking level: %s",
+                           ma_planner.thinking_config.thinking_level)
+    else:
+        status_logger.info("Main agent planner: None")
+
     #SUB-AGENTS:
-    web_researcher_agent = res.get_web_researcher_agent(sa_model)
-    cv_parcer_agent = cvpa.get_cv_parcer_agent(sa_model)
+    web_researcher_agent = res.get_web_researcher_agent(sa_model, sa_planner)
+    cv_parcer_agent = cvpa.get_cv_parcer_agent(sa_model, sa_planner)
 
     # job_description_agent = jda.get_job_description_agent(model)
     job_description_agent = jda.get_job_description_agent_tavily(
                                             sa_model,
-                                            tavily_advanced_extraction
+                                            tavily_advanced_extraction,
+                                            sa_planner
                                             )
 
-    cl_generator_agent = clg.get_cl_generator_agent(ma_model)
+    cl_generator_agent = clg.get_cl_generator_agent(ma_model, ma_planner)
 
     # The ParallelAgent runs all its sub-agents simultaneously.
     parallel_research_team = ParallelAgent(
