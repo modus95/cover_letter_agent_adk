@@ -26,7 +26,7 @@ def get_cl_generator_agent(model, planner=None) -> LlmAgent:
 
         Yout task is to generate a proffessional, well-structured cover letter based on 
         the information provided by "ParallelResearchTeam"'s sub agents, and taking into account
-        the important constraints:
+        the constraints below.
 
         <About company (mission, vision, values)>
         {company_info}
@@ -42,21 +42,22 @@ def get_cl_generator_agent(model, planner=None) -> LlmAgent:
         
         <Constraints>    
         - The cover letter should be short and concise, up to 300 words.        
-        - Start the letter with a greeting (e.g. "Dear ..."). Don't include any additional placeholders 
-          for date, subject line, company name, company address, etc. at the very beginning of the letter.
         - ALWAYS include the bullet points of values that the user could bring to the company.
         - Don't include any numerical metrics.
         - Don't use complicated phrases. The writing style should correspond to the advanced 
-          intermediate English level (B2).     
+          intermediate English level (B2). 
+        - Don't include any additional placeholders for date, subject line, company name, 
+          company address, etc. at the very beginning of the letter.    
         - Don't include any information about user's e-mail, phone number, job title, etc. 
           in the closing.
         </Constraints>
 
         <Output>
         **IMPORTANT:**
-        - If ALL "ParallelResearchTeam"'s sub agents have returned the "success" status, then return the
-        generated cover letter text in Markdown format with the "success" status. 
-        - If ANY of the sub_agents has returned the "error" status, don't generate a cover letter, 
+        Pay attention to the "status" field of a sub agents' responses:
+        - If ALL "ParallelResearchTeam"'s sub agents have returned the "success" status, 
+        then return the generated cover letter text in Markdown format with the "success" status. 
+        - If ANY of the sub agents has returned the "error" status, don't generate a cover letter, 
         but return the clear reason of the failure with the "error" status.
 
         Your response MUST be valid JSON matching the `ResponseContent` structure:
