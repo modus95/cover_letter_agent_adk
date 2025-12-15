@@ -31,26 +31,30 @@ def create(**kwargs) -> None:
         enable_tracing=True,
     )
 
-    # Deploy to Agent Engine
-    remote_agent = agent_engines.create(
-        agent_engine=adk_app,
-        display_name=agent_name,
-        description="Agent to generate a cover letter based on provided information",
-        requirements=[
-            "google-cloud-aiplatform[adk,agent_engines]",
-            "pydantic"
-        ],
-        extra_packages=[
-            "./vertex_utils.py",
-            "./sub_agents",
-            "./cover_letter_agent",
-        ],
-        env_vars={
-            "TAVILY_API_KEY": os.getenv("TAVILY_API_KEY"),
-        }
-    )
-    print("✅ Agent deployed successfully!")
-    print(f"🆔 Agent Engine ID: {remote_agent.resource_name}")
+    agent_config = {
+        "agent_engine": adk_app,
+        "display_name": agent_name,
+        "description": "Agent to generate a cover letter based on provided information",
+        "requirements": ["google-cloud-aiplatform[adk,agent_engines]",
+                         "pydantic"],
+        "extra_packages": ["./vertex_utils.py",
+                           "./sub_agents",
+                           "./cover_letter_agent"],
+        "env_vars": {"TAVILY_API_KEY": os.getenv("TAVILY_API_KEY")}
+    }
+
+    # Deploy / update Agent Engine
+    existing_agents = list(agent_engines.list(filter=f'display_name={agent_name}'))
+    if existing_agents:
+        remote_agent = existing_agents[0].update(**agent_config)
+        print("✅ Agent updated successfully!")
+        print(f"🆔 Agent Engine ID: {remote_agent.resource_name}")
+    else:
+        remote_agent = agent_engines.create(**agent_config)
+        print("✅ Agent deployed successfully!")
+        print(f"🆔 Agent Engine ID: {remote_agent.resource_name}")
+
+    return remote_agent
 
 
 def delete(**kwargs) -> None:

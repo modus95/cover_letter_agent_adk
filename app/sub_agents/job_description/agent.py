@@ -23,12 +23,17 @@ class PickleableMcpToolset(McpToolset):
     def __setstate__(self, state):
         """Restore state and re-initialize."""
         self._init_kwargs = state["_init_kwargs"]
+
+        # Update API key from cloud environment if available
+        # (critical for remote deployment)
+        if "TAVILY_API_KEY" in os.environ:
+            if "connection_params" in self._init_kwargs:
+                params = self._init_kwargs["connection_params"]
+                if hasattr(params, "headers") and "Authorization" in params.headers:
+                    params.headers["Authorization"] = f"Bearer {os.environ['TAVILY_API_KEY']}"
+
         # Re-call init to re-establish connections/loggers
-        try:
-            super().__init__(**self._init_kwargs)
-        except Exception as e:
-            # Fallback or logging if needed during unpickling
-            print(f"Warning: Failed to re-initialize McpToolset during unpickling: {e}")
+        super().__init__(**self._init_kwargs)
 
 
 def get_job_description_agent_tavily(model,

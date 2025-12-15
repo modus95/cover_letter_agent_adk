@@ -8,10 +8,13 @@ import sub_agents.cv_parcer.agent as cvpa
 import sub_agents.job_description.agent as jda
 import sub_agents.cl_generator.agent as clg
 
-from vertex_utils import define_model, get_planner
+from vertex_utils import get_planner
 
 
-DEFAULT_MODEL_NAME = "gemini-2.5-flash-preview-09-2025"
+agent_model_names = {
+    "sub_agents_model": "gemini-2.5-flash",
+    "main_agent_model": "gemini-2.5-flash"
+}
 
 
 def get_root_agent(models: Optional[str | dict],
@@ -34,11 +37,8 @@ def get_root_agent(models: Optional[str | dict],
         A SequentialAgent that orchestrates the web research and cover letter
         writing process.
     """
-    if isinstance(models, str):
-        sa_model = ma_model = define_model(models)
-    else:
-        sa_model = define_model(models["sub_agents_model"])
-        ma_model = define_model(models["main_agent_model"])
+    sa_model = models["sub_agents_model"]
+    ma_model = models["main_agent_model"]
 
     sa_planner = get_planner(sa_model)
     ma_planner = get_planner(ma_model)
@@ -72,4 +72,4 @@ def get_root_agent(models: Optional[str | dict],
     return ra
 
 
-root_agent = get_root_agent(DEFAULT_MODEL_NAME, tavily_advanced_extraction=False)
+root_agent = get_root_agent(agent_model_names, tavily_advanced_extraction=False)
