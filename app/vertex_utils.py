@@ -1,21 +1,10 @@
 """Utility functions for agent interactions and asynchronous operations."""
 
-import re
-import json
-
 from typing import Optional
 from pydantic import BaseModel, Field
 
 from google.genai import types
 from google.adk.planners.built_in_planner import BuiltInPlanner
-
-
-# RETRY_CONFIG = types.HttpRetryOptions(
-#     attempts=3,  # Maximum retry attempts
-#     exp_base=5,  # Delay multiplier
-#     initial_delay=1,
-#     http_status_codes=[429, 500, 503, 504], # Retry on these HTTP errors
-# )
 
 
 class ResponseContent(BaseModel):
@@ -36,16 +25,6 @@ class ResponseContent(BaseModel):
             " The error message if the status is 'error'."
             )
     )
-
-
-def load_json(data):
-    """Extract and load JSON from a string."""
-    try:
-        pat = r'\{[^{}]*(?:{[^{}]*}[^{}]*)*\}'
-        return json.loads(re.search(pat, data).group(0))
-
-    except json.JSONDecodeError:
-        return {}
 
 
 def get_planner(md: str) -> Optional[BuiltInPlanner]:

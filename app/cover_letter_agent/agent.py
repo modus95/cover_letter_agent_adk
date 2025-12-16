@@ -4,11 +4,10 @@ from typing import Optional
 from google.adk.agents import ParallelAgent, SequentialAgent
 
 import sub_agents.web_researcher.agent as res
-import sub_agents.cv_parcer.agent as cvpa
 import sub_agents.job_description.agent as jda
 import sub_agents.cl_generator.agent as clg
 
-from vertex_utils import get_planner
+import vertex_utils as vu
 
 
 agent_model_names = {
@@ -40,14 +39,11 @@ def get_root_agent(models: Optional[str | dict],
     sa_model = models["sub_agents_model"]
     ma_model = models["main_agent_model"]
 
-    sa_planner = get_planner(sa_model)
-    ma_planner = get_planner(ma_model)
+    sa_planner = vu.get_planner(sa_model)
+    ma_planner = vu.get_planner(ma_model)
 
     #SUB-AGENTS:
     web_researcher_agent = res.get_web_researcher_agent(sa_model, sa_planner)
-    cv_parcer_agent = cvpa.get_cv_parcer_agent(sa_model, sa_planner)
-
-    # job_description_agent = jda.get_job_description_agent(model)
     job_description_agent = jda.get_job_description_agent_tavily(
                                             sa_model,
                                             tavily_advanced_extraction,
@@ -59,7 +55,7 @@ def get_root_agent(models: Optional[str | dict],
     # The ParallelAgent runs all its sub-agents simultaneously.
     parallel_research_team = ParallelAgent(
         name="ParallelResearchTeam",
-        sub_agents=[web_researcher_agent, job_description_agent, cv_parcer_agent],
+        sub_agents=[web_researcher_agent, job_description_agent],
     )
 
     # This SequentialAgent defines the high-level workflow:
