@@ -71,11 +71,14 @@ async def main_async(
         print(f"Job description URL: {job_description_url}")
 
     prompt = f"""
-    ### Company:
+    <company url>
     {company_url}
+    </company>
 
-    ### Job description:
-    {job_description_url}    
+    <job description url>
+    {job_description_url}
+    </job>
+    
     """
 
     print("\nProcessing your request...\n")

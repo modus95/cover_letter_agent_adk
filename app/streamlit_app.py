@@ -87,11 +87,14 @@ async def run_agent(
     session_id = new_session.id
 
     prompt = f"""
-    ### Company:
+    <company url>
     {company_url}
+    </company>
 
-    ### Job description:
+    <job description url>
     {job_description_url}
+    </job>
+    
     """
 
     # Process the user query through the agent

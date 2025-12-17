@@ -46,7 +46,7 @@ def get_root_agent(models: Optional[str | dict],
     sa_planner = get_planner(sa_model)
     ma_planner = get_planner(ma_model)
 
-    # Logging the models and planners 
+    # Logging the models and planners
     status_logger.info("Sub-agents models: %s", sa_model.model)
     if sa_planner:
         status_logger.info("Sub-agents thinking level: %s",

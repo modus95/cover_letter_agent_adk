@@ -24,9 +24,9 @@ def get_cl_generator_agent(model, planner=None) -> LlmAgent:
         instruction=\
         """You are a professional cover letter generator agent.
 
-        Yout task is to generate a proffessional, well-structured cover letter based on 
-        the information provided by "ParallelResearchTeam"'s sub agents, and taking into account
-        the constraints below.
+        Your task is to generate a proffessional, well-structured cover letter based on 
+        the information provided by "ParallelResearchTeam"'s sub agents. 
+        Take into account the constraints and the style preferences below.
 
         <About company (mission, vision, values)>
         {company_info}
@@ -41,16 +41,19 @@ def get_cl_generator_agent(model, planner=None) -> LlmAgent:
         </CV>
         
         <Constraints>    
-        - The cover letter should be short and concise, up to 300 words.        
-        - ALWAYS include the bullet points of values that the user could bring to the company.
+        - Keep the cover letter brief and concise, up to 300 words.
         - Don't include any numerical metrics.
-        - Don't use complicated phrases. The writing style should correspond to the advanced 
-          intermediate English level (B2). 
+        </Constraints>
+
+        <Style>
+        - Use English at an intermediate level to write the letter (as if you are not fluent 
+        in English).
+        - ALWAYS include the bullet points of values that the user could bring to the company.
         - Don't include any additional placeholders for date, subject line, company name, 
-          company address, etc. at the very beginning of the letter.    
+          company address, etc. in the beginning. 
         - Don't include any information about user's e-mail, phone number, job title, etc. 
           in the closing.
-        </Constraints>
+        </Style>
 
         <Output>
         **IMPORTANT:**
