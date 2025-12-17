@@ -7,11 +7,18 @@ interaction with the agent engine.
 
 import os
 import argparse
+import asyncio
+import inspect
+import warnings
 
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+# pylint: disable=wrong-import-position
 import vertexai
 from vertexai import agent_engines
 from cover_letter_agent.agent import root_agent
 from dotenv import load_dotenv
+from google.api_core.exceptions import FailedPrecondition, NotFound
 
 
 load_dotenv()
@@ -64,85 +71,105 @@ def create(**kwargs) -> agent_engines.AgentEngine:
     return remote_agent
 
 
-def delete(**kwargs) -> None:
-    """Deletes an existing deployment."""
-
-    resource_id = kwargs["id"]
-    remote_app = agent_engines.get(resource_id)
-
-    if remote_app is None:
-        print(f"Remote deployment with ID `{resource_id}` not found.")
-        return
-    remote_app.delete(force=True)
-
-    print(f"Remote app `{resource_id}` deleted successfully!")
-
-
 def list_deployments(**kwargs) -> None:
-    """Lists all deployments."""
+    # pylint: disable=W0613
+    """Lists all deployments of the project."""
 
     deployments = agent_engines.list()
     if not deployments:
-        print("No deployments found.")
+        print("⚠️: No deployments found.")
         return
 
-    print("Deployments:")
+    print("✅ Deployments:")
     for deployment in deployments:
         print(f"- {deployment.resource_name}")
 
 
+def delete(**kwargs) -> None:
+    """Deletes an existing deployment by the specific Resource ID."""
+
+    if not kwargs["id"]:
+        print("⚠️: Please provide a Resource ID.")
+        return
+
+    resource_id = kwargs["id"]
+    try:
+        remote_app = agent_engines.get(resource_id)
+    except NotFound:
+        print(f"⚠️: Remote app `{resource_id}` not found.")
+        return
+
+    remote_app.delete(force=True)
+    print(f"✅ Remote app `{resource_id}` deleted successfully!")
+
+# ----------SESSIONS----------
+
 async def create_session(**kwargs):
-    """Creates a new remote session."""
+    """Creates a new remote session for the user."""
     remote_app = kwargs["remote_app"]
     agent_name = kwargs["agent_name"]
     user_id = kwargs["user_id"]
 
     if remote_app is None:
-        print(f"Remote deployment `{agent_name}` not found.")
+        print(f"⚠️: Remote deployment `{agent_name}` not found.")
         return
 
     remote_session = await remote_app.async_create_session(user_id=user_id)
     session_id = remote_session['id']
-    print("✅ Remote session created successfully!")
+    print(f"✅ Remote session for the `{user_id}` created successfully!")
     print(f"🆔 Remote session ID: {session_id}")
 
     return remote_session
 
 
 async def delete_session(**kwargs):
-    """Deletes a remote session."""
+    """Deletes a remote session of the user by the specific Session ID."""
+
+    if not kwargs["id"]:
+        print("⚠️: Please provide a Session ID.")
+        return
+
     remote_app = kwargs["remote_app"]
     agent_name = kwargs["agent_name"]
     session_id = kwargs["id"]
     user_id = kwargs["user_id"]
 
     if remote_app is None:
-        print(f"Remote deployment `{agent_name}` not found.")
+        print(f"⚠️: Remote deployment `{agent_name}` not found.")
+        return
+    try:
+        await remote_app.async_delete_session(session_id=session_id,
+                                              user_id=user_id)
+    except FailedPrecondition as e:
+        print(f"⚠️: Failed to delete remote session {session_id} for the `{user_id}`")
+        if "404 NOT_FOUND" in str(e):
+            print(f"The session {session_id} not found.")
+        else:
+            print(e)
         return
 
-    await remote_app.async_delete_session(session_id=session_id,
-                                          user_id=user_id)
-    print(f"Deleted remote session: {session_id}")
+    print(f"✅ Remote session {session_id} for the `{user_id}` deleted successfully!")
 
 
 async def list_sessions(**kwargs):
-    """Lists all sessions."""
+    """Lists all remote sessions of the user."""
     remote_app = kwargs["remote_app"]
     agent_name = kwargs["agent_name"]
     user_id = kwargs["user_id"]
 
     if remote_app is None:
-        print(f"Remote deployment `{agent_name}` not found.")
+        print(f"⚠️: Remote deployment `{agent_name}` not found.")
         return
 
-    sessions = await remote_app.async_list_sessions(user_id=user_id)
+    resp = await remote_app.async_list_sessions(user_id=user_id)
+    sessions = resp.get('sessions', [])
     if not sessions:
-        print("No sessions found.")
+        print(f"⚠️: No sessions found for the `{user_id}`.")
         return
 
-    print("Sessions:")
+    print(f"✅ Remote sessions of the `{user_id}`:")
     for session in sessions:
-        print(f"- {session['id']}")
+        print("- ", session['id'])
 
 
 async def delete_all_sessions(**kwargs) -> None:
@@ -152,21 +179,23 @@ async def delete_all_sessions(**kwargs) -> None:
     user_id = kwargs["user_id"]
 
     if remote_app is None:
-        print(f"Remote deployment `{agent_name}` not found.")
+        print(f"⚠️: Remote deployment `{agent_name}` not found.")
         return
 
-    fl = input(f"All remore sessions of the `{agent_name}` will be deleted. Continue? (Y/n)")
+    fl = input(f"⚠️: All remote sessions of the `{agent_name}` for the `{user_id}`"
+               " user will be deleted.\nContinue? [Y/n]")
     if fl.lower() not in ["y", ""]:
         return
 
-    sessions = await remote_app.async_list_sessions(user_id=user_id)
+    resp = await remote_app.async_list_sessions(user_id=user_id)
+    sessions = resp.get('sessions', [])
     if not sessions:
-        print("No sessions found.")
+        print(f"⚠️: No sessions found for the `{user_id}`.")
         return
 
     for session in sessions:
         await remote_app.async_delete_session(session_id=session['id'], user_id=user_id)
-        print(f"Session {session['id']} is deleted successfully!")
+        print(f"✅ Session {session['id']} for the `{user_id}` deleted successfully!")
 
 
 def main(args_):
@@ -175,7 +204,7 @@ def main(args_):
     location = os.getenv("GOOGLE_CLOUD_LOCATION")
     bucket = os.getenv("GOOGLE_CLOUD_STAGING_BUCKET")
     agent_name = os.getenv("AGENT_NAME")
-    user_id = os.getenv("USER_ID", "test_user")
+    user_id = args_.user_id or os.getenv("USER_ID", "test_user")
 
     vertexai.init(
         project=project_id,
@@ -195,15 +224,22 @@ def main(args_):
         "list": list_deployments,
         "create_session": create_session,
         "delete_session": delete_session,
-        "list_sessions": list_sessions,
+        "list_sessions":  list_sessions,
         "delete_all_sessions": delete_all_sessions,
     }
 
-    func[args_.mode](
-        remote_app=remote_app,
-        agent_name=agent_name,
-        id=args_.id,
-        user_id=user_id)
+    f = func[args_.mode]
+    kwargs = {
+        "remote_app": remote_app,
+        "agent_name": agent_name,
+        "id": args_.id,
+        "user_id": user_id
+    }
+
+    if inspect.iscoroutinefunction(f):
+        asyncio.run(f(**kwargs))
+    else:
+        f(**kwargs)
 
 
 if __name__ == "__main__":
@@ -230,6 +266,13 @@ if __name__ == "__main__":
         type=str,
         required=False,
         help="Resource ID/ session ID to delete")
+
+    parser.add_argument(
+        "-u",
+        "--user_id",
+        type=str,
+        required=False,
+        help="User ID to delete")
 
     args = parser.parse_args()
     main(args)
