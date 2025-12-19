@@ -6,7 +6,7 @@ from google.adk.agents import ParallelAgent, SequentialAgent
 
 import sub_agents.web_researcher.agent as res
 import sub_agents.cv_parcer.agent as cvpa
-import sub_agents.job_description.agent as jda
+import sub_agents.job_info.agent as jda
 import sub_agents.cl_generator.agent as clg
 
 from utils import define_model, get_planner
@@ -65,9 +65,7 @@ def get_root_agent(models: Optional[str | dict],
     web_researcher_agent = res.get_web_researcher_agent(sa_model, sa_planner)
     cv_parcer_agent = cvpa.get_cv_parcer_agent(sa_model, sa_planner)
 
-    # job_description_agent = jda.get_job_description_agent(model)
-    job_description_agent = jda.get_job_description_agent_tavily(
-                                            sa_model,
+    job_role_agent = jda.get_job_role_agent(sa_model,
                                             tavily_advanced_extraction,
                                             sa_planner
                                             )
@@ -77,7 +75,11 @@ def get_root_agent(models: Optional[str | dict],
     # The ParallelAgent runs all its sub-agents simultaneously.
     parallel_research_team = ParallelAgent(
         name="ParallelResearchTeam",
-        sub_agents=[web_researcher_agent, job_description_agent, cv_parcer_agent],
+        sub_agents=[
+            web_researcher_agent,
+            job_role_agent,
+            cv_parcer_agent
+            ]
     )
 
     # This SequentialAgent defines the high-level workflow:

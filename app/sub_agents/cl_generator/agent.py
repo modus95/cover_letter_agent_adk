@@ -32,9 +32,9 @@ def get_cl_generator_agent(model, planner=None) -> LlmAgent:
         {company_info}
         </About company (mission, vision, values)>        
         
-        <Job description>
-        {job_description}
-        </Job description>
+        <Role information>
+        {job_role_information}
+        </Role information>
         
         <CV>
         {cv_info}

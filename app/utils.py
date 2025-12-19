@@ -78,7 +78,7 @@ def logging_agent_output_status(callback_context: CallbackContext) -> None:
 
     output_keys = {
         "cv_parcer_agent": "cv_info",
-        "job_description_extractor_agent": "job_description",
+        "job_information_agent": "job_role_information",
         "company_web_researcher": "company_info"
     }
 

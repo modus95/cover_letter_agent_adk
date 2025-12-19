@@ -64,21 +64,20 @@ async def main_async(
     else:
         print(f"Company URL: {company_url}")
 
-    job_description_url = os.getenv("JOB_DESCRIPTION_URL")
-    if not job_description_url:
-        job_description_url = input("Job description URL: ")
+    job_role_url = os.getenv("JOB_ROLE_URL")
+    if not job_role_url:
+        job_role_url = input("Job role URL: ")
     else:
-        print(f"Job description URL: {job_description_url}")
+        print(f"Job role URL: {job_role_url}")
 
     prompt = f"""
-    <company url>
+    <Company url>
     {company_url}
-    </company>
+    </Company>
 
-    <job description url>
-    {job_description_url}
-    </job>
-    
+    <Job role url>
+    {job_role_url}
+    </Job>
     """
 
     print("\nProcessing your request...\n")
@@ -126,7 +125,7 @@ if __name__ == "__main__":
         "-M",
         "--ma_model",
         type=str,
-        default="gemini-3-pro-preview",
+        default="gemini-2.5-flash-preview-09-2025",
         help="Main agent model name"
     )
     args = parser.parse_args()
