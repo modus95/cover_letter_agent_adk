@@ -208,6 +208,9 @@ def main():
                 # Save the result to session_state (PERSIST)
                 st.session_state.generated_cover_letter = result
 
+                # Save the log file as `sub_agents_output_<company_domain>.log`
+                utils.copy_log_file(LOGFILE_NAME, company_url)
+
             except RuntimeError as e:
                 st.session_state.is_error = {
                     "error": True,

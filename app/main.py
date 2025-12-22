@@ -101,6 +101,9 @@ async def main_async(
     print(agent_response["status"].upper(),":")
     print(agent_response["message"])
 
+    # Save the log file as `sub_agents_output_<company_domain>.log`
+    utils.copy_log_file(LOGFILE_NAME, company_url)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Cover Letter Agent")

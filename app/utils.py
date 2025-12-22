@@ -7,6 +7,8 @@ import tempfile
 import pathlib
 import logging
 import datetime
+import shutil
+from urllib.parse import urlparse
 
 from typing import Optional
 from contextlib import suppress
@@ -242,6 +244,42 @@ def setup_loggers(logfile_name: str):
     status_logger.propagate = False
 
     return logger, status_logger
+
+
+def get_domain(url: str) -> str:
+    """
+    Extracts the domain name from a URL.    
+    Example: "https://www.google.com/search" -> "google"
+    """
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
+    try:
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc    
+        if domain.startswith('www.'):
+            domain = domain[4:]
+        return domain.split('.')[0]
+
+    except ValueError:
+        return "copy"
+
+
+def copy_log_file(logfile_name: str, company_url: str):
+    """
+    Copies the specified log file to a new file named
+    "sub_agents_output_<company domain>.log" in the logs folder.
+    """
+    log_dir = os.path.join(os.path.dirname(__file__), "..", "logs")
+    source_path = os.path.join(log_dir, logfile_name)
+
+    if not os.path.exists(source_path):
+        return
+
+    company_domain = get_domain(company_url)
+    dest_filename = f"sub_agents_output_{company_domain}.log"
+    dest_path = os.path.join(log_dir, dest_filename)
+
+    shutil.copy2(source_path, dest_path)
 
 
 async def process_agent_response(event):
