@@ -5,7 +5,6 @@ from typing import Optional
 from google.adk.agents import ParallelAgent, SequentialAgent
 
 import sub_agents.web_researcher.agent as res
-import sub_agents.cv_parcer.agent as cvpa
 import sub_agents.job_info.agent as jda
 import sub_agents.cl_generator.agent as clg
 
@@ -63,7 +62,6 @@ def get_root_agent(models: Optional[str | dict],
 
     #SUB-AGENTS:
     web_researcher_agent = res.get_web_researcher_agent(sa_model, sa_planner)
-    cv_parcer_agent = cvpa.get_cv_parcer_agent(sa_model, sa_planner)
 
     job_role_agent = jda.get_job_role_agent(sa_model,
                                             tavily_advanced_extraction,
@@ -78,7 +76,6 @@ def get_root_agent(models: Optional[str | dict],
         sub_agents=[
             web_researcher_agent,
             job_role_agent,
-            cv_parcer_agent
             ]
     )
 

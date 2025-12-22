@@ -22,24 +22,15 @@ def get_cl_generator_agent(model, planner=None) -> LlmAgent:
         planner=planner,
         description="Agent to generate a cover letter based on provided information",
         instruction=\
-        """You are a professional cover letter generator agent.
-
-        Your task is to generate a proffessional, well-structured cover letter based on 
-        the information provided by "ParallelResearchTeam"'s sub agents. 
-        Take into account the constraints and the style preferences below.
-
-        <About company (mission, vision, values)>
-        {company_info}
-        </About company (mission, vision, values)>        
-        
-        <Role information>
-        {job_role_information}
-        </Role information>
-        
-        <CV>
-        {cv_info}
-        </CV>
-        
+        """
+        You are a professional cover letter generator agent.
+        Yout task is to generate a proffessional, well-structured cover letter based on:
+        - `company_web_researcher` sub-agent output:
+        {company_info} 
+        - `job_information_agent` output:
+        {job_role_information} 
+        - Information about the user's skills and experience from the provided CV. 
+             
         <Constraints>    
         - Keep the cover letter brief and concise, up to 300 words.
         - Don't include any numerical metrics.

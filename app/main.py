@@ -70,6 +70,8 @@ async def main_async(
     else:
         print(f"Job role URL: {job_role_url}")
 
+    cv_info = utils.read_pdf(file_name)
+
     prompt = f"""
     <Company url>
     {company_url}
@@ -78,6 +80,10 @@ async def main_async(
     <Job role url>
     {job_role_url}
     </Job>
+
+    <User CV>
+    {cv_info}
+    </User>
     """
 
     print("\nProcessing your request...\n")
@@ -87,7 +93,6 @@ async def main_async(
         USER_ID,
         session_id,
         prompt,
-        file_name
     )
 
     print("\nTHE AGENT RESPONSE:\n")

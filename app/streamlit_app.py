@@ -65,7 +65,7 @@ if "is_error" not in st.session_state:
 # --------------------------------------------------------------------
 async def run_agent(
     company_url: str,
-    job_description_url: str,
+    job_role_url: str,
     file_path: str,
     models: dict,
     logging: bool,
@@ -86,15 +86,20 @@ async def run_agent(
         app_name=APP_NAME, user_id=USER_ID)
     session_id = new_session.id
 
-    prompt = f"""
-    <company url>
-    {company_url}
-    </company>
+    cv_info = utils.read_pdf(file_path)
 
-    <job description url>
-    {job_description_url}
-    </job>
-    
+    prompt = f"""
+    <Company url>
+    {company_url}
+    </Company>
+
+    <Job role url>
+    {job_role_url}
+    </Job>
+
+    <User CV>
+    {cv_info}
+    </User>
     """
 
     # Process the user query through the agent
@@ -103,7 +108,6 @@ async def run_agent(
         USER_ID,
         session_id,
         prompt,
-        file_path
     )
 
     return agent_response
@@ -121,16 +125,14 @@ def main():
         "sub_agents_model": gemini_expander.selectbox(
                             "Sub-agents model",
                             options=["gemini-2.5-flash-preview-09-2025",
-                                    "gemini-2.5-pro",
-                                    "gemini-3-pro-preview (Low thinking)"],
+                                    "gemini-3-flash-preview (Low thinking)"],
                             index=0
                         ),
         "main_agent_model": gemini_expander.selectbox(
                             "Main agent model",
                             options=["gemini-2.5-flash-preview-09-2025",
-                                    "gemini-2.5-pro",
-                                    "gemini-3-pro-preview (Low thinking)"],
-                            index=2
+                                    "gemini-3-flash-preview (Low thinking)"],
+                            index=0
                         )
     }
 
@@ -158,8 +160,8 @@ def main():
         )
 
     uploaded_file = left.file_uploader(
-        "**Upload your CV (PDF, DOC)**",
-        type=["pdf", "doc", "docx"]
+        "**Upload your CV (PDF)**",
+        type=["pdf"]
     )
 
     generate_clicked = left.button(

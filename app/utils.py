@@ -12,6 +12,7 @@ from typing import Optional
 from contextlib import suppress
 from pydantic import BaseModel, Field
 
+import pypdf
 import streamlit.components.v1 as components
 
 from google.adk.runners import Runner
@@ -157,6 +158,24 @@ def save_uploaded_file(uploaded_file):
         return tmp_file.name
 
 
+def read_pdf(file_name: str) -> str:
+    """Reads, extracts, and logs text from a PDF file."""
+
+    file_path = pathlib.Path(file_name)
+    if not file_path.exists():
+        raise FileNotFoundError(f"File not found: {file_name}")
+
+    reader = pypdf.PdfReader(file_path)
+    pdf_text = "\n".join([page.extract_text() for page in reader.pages]).strip()
+
+    # Log the extracted text
+    output_logging(logging.getLogger("agent_output_logger"),
+                   "USER CV",
+                   pdf_text)
+
+    return pdf_text
+
+
 def output_logging(logg: logging.Logger,
                    ttl: str,
                    info_str: str,
@@ -246,25 +265,14 @@ async def call_agent_async(
     user_id: str,
     session_id: str,
     prompt: str,
-    file_name: str
     ):
     """Call the agent asynchronously with the user's prompt and file."""
 
     final_response_text = ""
 
-    file_path = pathlib.Path(file_name)
-    if not file_path.exists():
-        raise FileNotFoundError(f"File not found: {file_name}")
-
     query_content = types.Content(
         role="user",
-        parts=[
-            types.Part(text=prompt),
-            types.Part.from_bytes(
-                data=file_path.read_bytes(),
-                mime_type="application/pdf"
-                )
-            ]
+        parts=[types.Part(text=prompt)]
         )
 
     agen = runner.run_async(
