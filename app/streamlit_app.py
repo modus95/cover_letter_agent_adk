@@ -47,6 +47,7 @@ st.html(f"""
 """)
 
 gemini_expander = st.sidebar.expander(":blue[**Gemini model**]", expanded=False)
+language_level_expander = st.sidebar.expander(":blue[**Language level**]", expanded=False)
 tavily_expander = st.sidebar.expander(":blue[**Tavily Extractor settings**]", expanded=False)
 
 # ---- SESSION STATE ----
@@ -69,13 +70,16 @@ async def run_agent(
     file_path: str,
     models: dict,
     logging: bool,
+    language_level: str,
     tavily_advanced_extraction: bool
 ) -> str:
     """Run the agent asynchronously."""
     session_service = InMemorySessionService()
 
     runner = Runner(
-        agent=get_root_agent(models, tavily_advanced_extraction),
+        agent=get_root_agent(models,
+                             language_level,
+                             tavily_advanced_extraction),
         app_name=APP_NAME,
         session_service=session_service,
         plugins=[LoggingPlugin()] if logging else None
@@ -135,6 +139,17 @@ def main():
                             index=0
                         )
     }
+
+    language_level = language_level_expander.radio(
+        "Language level",
+        options=["Intermediate (B1)",
+                 "Upper-Intermediate (B2)",
+                 "Advanced (C1)",
+                 "Proficient (C2)",
+                ],
+        index=1,
+        label_visibility="collapsed"
+    )
 
     tavily_advanced_extraction = tavily_expander.toggle(
         "Advanced extraction", value=False)
@@ -201,6 +216,7 @@ def main():
                         temp_file_path,
                         models,
                         logging,
+                        language_level,
                         tavily_advanced_extraction
                     )
                 )

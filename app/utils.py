@@ -103,11 +103,11 @@ def logging_agent_output_status(callback_context: CallbackContext) -> None:
                        f"{log_title} / {status.upper()}",
                        message)
 
-    except KeyError as ke:
+    except (KeyError, AttributeError) as err:
         output_logging(output_logger,
                        f"{log_title} / (Raw Output)",
                        json.dumps(output_dict, indent=4),
-                       str(ke))
+                       str(err))
 
     return None
 
@@ -255,7 +255,7 @@ def get_domain(url: str) -> str:
         url = 'https://' + url
     try:
         parsed_url = urlparse(url)
-        domain = parsed_url.netloc    
+        domain = parsed_url.netloc
         if domain.startswith('www.'):
             domain = domain[4:]
         return domain.split('.')[0]

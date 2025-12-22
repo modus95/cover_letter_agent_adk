@@ -28,6 +28,7 @@ async def main_async(
     file_name: str,
     verbose: bool,
     tavily: bool,
+    level_code: str,
     ma_model_name: str,
     sa_model_name: str
 ):
@@ -40,9 +41,16 @@ async def main_async(
         "main_agent_model": ma_model_name
     }
 
+    language_levels = {
+        "b1": "Intermediate (B1)",
+        "b2": "Upper-Intermediate (B2)",
+        "c1": "Advanced (C1)",
+        "c2": "Proficient (C2)"
+    }
+
     # Initialize the runner
     runner = Runner(
-        agent=get_root_agent(models, tavily),
+        agent=get_root_agent(models, language_levels[level_code], tavily),
         app_name=APP_NAME,
         session_service=session_service,
         plugins=plugins
@@ -123,6 +131,14 @@ if __name__ == "__main__":
         help="Enable tavily advanced extraction"
         )
     parser.add_argument(
+        "-l",
+        "--language_level",
+        type=str,
+        default="b2",
+        choices=["b1", "b2", "c1", "c2"],
+        help="Language level"
+    )
+    parser.add_argument(
         "-m",
         "--sa_model",
         type=str,
@@ -148,6 +164,7 @@ if __name__ == "__main__":
                 args.file_name,
                 args.verbose,
                 args.tavily,
+                args.language_level,
                 args.ma_model,
                 args.sa_model
             )

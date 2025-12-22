@@ -13,10 +13,9 @@ from utils import define_model, get_planner
 
 status_logger = logging.getLogger("agent_status_logger")
 
-DEFAULT_MODEL_NAME = "gemini-2.5-flash-preview-09-2025"
-
 
 def get_root_agent(models: Optional[str | dict],
+                   language_level: str,
                    tavily_advanced_extraction: bool = False):
     """
     Initializes and returns a root agent for cover letter generation.
@@ -30,6 +29,8 @@ def get_root_agent(models: Optional[str | dict],
         or a dictionary specifying different models for sub-agents and the main agent 
         (e.g., `{"sub_agents_model": "model_name_1", "main_agent_model": "model_name_2"}`).
 
+        language_level: The language level (B1-C2) to be used by the main agent for 
+        cover letter generation.
         tavily_advanced_extraction: Whether to use Tavily advanced extraction.
 
     Returns:
@@ -45,7 +46,7 @@ def get_root_agent(models: Optional[str | dict],
     sa_planner = get_planner(sa_model)
     ma_planner = get_planner(ma_model)
 
-    # Logging the models and planners
+    # Logging the models, planners, and language level
     status_logger.info("Sub-agents models: %s", sa_model.model)
     if sa_planner:
         status_logger.info("Sub-agents thinking level: %s",
@@ -59,6 +60,7 @@ def get_root_agent(models: Optional[str | dict],
                            ma_planner.thinking_config.thinking_level)
     else:
         status_logger.info("Main agent planner: None")
+    status_logger.info("Language level: %s", language_level)
 
     #SUB-AGENTS:
     web_researcher_agent = res.get_web_researcher_agent(sa_model, sa_planner)
@@ -68,7 +70,10 @@ def get_root_agent(models: Optional[str | dict],
                                             sa_planner
                                             )
 
-    cl_generator_agent = clg.get_cl_generator_agent(ma_model, ma_planner)
+    cl_generator_agent = clg.get_cl_generator_agent(ma_model,
+                                                    language_level,
+                                                    ma_planner
+                                                    )
 
     # The ParallelAgent runs all its sub-agents simultaneously.
     parallel_research_team = ParallelAgent(
@@ -89,4 +94,8 @@ def get_root_agent(models: Optional[str | dict],
     return ra
 
 
-root_agent = get_root_agent(DEFAULT_MODEL_NAME, tavily_advanced_extraction=False)
+root_agent = get_root_agent(
+    models="gemini-2.5-flash-preview-09-2025",
+    language_level="Upper-Intermediate (B2)",
+    tavily_advanced_extraction=False
+    )
