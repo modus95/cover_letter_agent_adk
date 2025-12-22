@@ -127,7 +127,7 @@ def define_model(model_name:str) -> Gemini:
     return Gemini(model=model_name, retry_options=RETRY_CONFIG)
 
 
-def get_planner(md: Gemini) -> Optional[BuiltInPlanner]:
+def get_planner(md: Gemini, thinking_level: str) -> Optional[BuiltInPlanner]:
     """
     Determines and returns a BuiltInPlanner based on the model version.
 
@@ -138,17 +138,18 @@ def get_planner(md: Gemini) -> Optional[BuiltInPlanner]:
     Args:
         md: An object containing model information, expected to have a 'model'
             attribute (e.g., `md.model = "gemini-3.0-flash"`).
+        thinking_level: The thinking level to use for the planner 
+        ("minimal", "low", "medium", "high").
 
     Returns:
         An instance of BuiltInPlanner if the model version is 3 or higher,
         otherwise None.
     """
-
     version = float(md.model.split("-")[1])
-    if version >= 3:
+    if version >= 3 and thinking_level in ["minimal", "low", "medium", "high"]:
         return BuiltInPlanner(
-            thinking_config=types.ThinkingConfig(thinking_level="low")
-            )
+            thinking_config=types.ThinkingConfig(thinking_level=thinking_level)
+        )
 
     return None
 

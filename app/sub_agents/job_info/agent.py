@@ -1,4 +1,4 @@
-"""Module for creating an LLM agent to generate job descriptions using Tavily MCP tools."""
+"""Module for creating an LLM agent to generate job descriptions using Tavily API."""
 
 import os
 
@@ -17,7 +17,7 @@ def get_job_role_agent(model,
                        tavily_advanced_extraction,
                        planner=None) -> LlmAgent:
     """
-    Creates an LLM agent for fetching job role information using Tavily MCP tools.
+    Creates an LLM agent for fetching job role information using Tavily API.
 
     Args:
         model: The language model to be used.

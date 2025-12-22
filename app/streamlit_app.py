@@ -69,15 +69,17 @@ async def run_agent(
     job_role_url: str,
     file_path: str,
     models: dict,
-    logging: bool,
+    g3_thinking_level: str,
     language_level: str,
-    tavily_advanced_extraction: bool
+    tavily_advanced_extraction: bool,
+    logging: bool,
 ) -> str:
     """Run the agent asynchronously."""
     session_service = InMemorySessionService()
 
     runner = Runner(
         agent=get_root_agent(models,
+                             g3_thinking_level,
                              language_level,
                              tavily_advanced_extraction),
         app_name=APP_NAME,
@@ -129,16 +131,26 @@ def main():
         "sub_agents_model": gemini_expander.selectbox(
                             "Sub-agents model",
                             options=["gemini-2.5-flash-preview-09-2025",
-                                    "gemini-3-flash-preview (Low thinking)"],
+                                    "gemini-3-flash-preview"],
                             index=0
                         ),
         "main_agent_model": gemini_expander.selectbox(
                             "Main agent model",
                             options=["gemini-2.5-flash-preview-09-2025",
-                                    "gemini-3-flash-preview (Low thinking)"],
+                                    "gemini-3-flash-preview"],
                             index=0
                         )
     }
+
+    g3_tl_disabled = all(map(lambda x: float(x.split('-')[1]) != 3, models.values()))
+    g3_thinking_level = gemini_expander.selectbox(
+                            "Gemini3 thinking level",
+                            options=["minimal", "low", "medium", "high"],
+                            index=0,
+                            help=("The `minimal`/`low` thinking level is preferred "
+                                  "for cover letter generation"),
+                            disabled=g3_tl_disabled  # enable if any of the models is Gemini3
+                        )
 
     language_level = language_level_expander.radio(
         "Language level",
@@ -215,9 +227,10 @@ def main():
                         job_description_url,
                         temp_file_path,
                         models,
-                        logging,
+                        g3_thinking_level,
                         language_level,
-                        tavily_advanced_extraction
+                        tavily_advanced_extraction,
+                        logging,
                     )
                 )
 

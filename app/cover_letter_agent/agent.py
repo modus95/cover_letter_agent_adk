@@ -15,6 +15,7 @@ status_logger = logging.getLogger("agent_status_logger")
 
 
 def get_root_agent(models: Optional[str | dict],
+                   g3_thinking_level: str,
                    language_level: str,
                    tavily_advanced_extraction: bool = False):
     """
@@ -31,6 +32,8 @@ def get_root_agent(models: Optional[str | dict],
 
         language_level: The language level (B1-C2) to be used by the main agent for 
         cover letter generation.
+        thinking_level: The thinking level of Gemini3 ("minimal", "low", "medium", "high").
+        For cover letter generation, it is recommended to use "minimal" or "low".
         tavily_advanced_extraction: Whether to use Tavily advanced extraction.
 
     Returns:
@@ -43,24 +46,22 @@ def get_root_agent(models: Optional[str | dict],
         sa_model = define_model(models["sub_agents_model"])
         ma_model = define_model(models["main_agent_model"])
 
-    sa_planner = get_planner(sa_model)
-    ma_planner = get_planner(ma_model)
+    sa_planner = get_planner(sa_model, g3_thinking_level)
+    ma_planner = get_planner(ma_model, g3_thinking_level)
 
     # Logging the models, planners, and language level
     status_logger.info("Sub-agents models: %s", sa_model.model)
     if sa_planner:
         status_logger.info("Sub-agents thinking level: %s",
                            sa_planner.thinking_config.thinking_level)
-    else:
-        status_logger.info("Sub-agents planner: None")
 
     status_logger.info("Main agent model: %s", ma_model.model)
     if ma_planner:
         status_logger.info("Main agent thinking level: %s",
                            ma_planner.thinking_config.thinking_level)
-    else:
-        status_logger.info("Main agent planner: None")
+
     status_logger.info("Language level: %s", language_level)
+    status_logger.info("Gemini3 thinking level: %s", g3_thinking_level)
 
     #SUB-AGENTS:
     web_researcher_agent = res.get_web_researcher_agent(sa_model, sa_planner)
@@ -97,5 +98,6 @@ def get_root_agent(models: Optional[str | dict],
 root_agent = get_root_agent(
     models="gemini-2.5-flash-preview-09-2025",
     language_level="Upper-Intermediate (B2)",
+    g3_thinking_level="minimal",
     tavily_advanced_extraction=False
     )

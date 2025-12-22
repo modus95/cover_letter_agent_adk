@@ -30,7 +30,8 @@ async def main_async(
     tavily: bool,
     level_code: str,
     ma_model_name: str,
-    sa_model_name: str
+    sa_model_name: str,
+    g3_thinking_level: str,
 ):
     """Main entry point for the cover letter agent."""
 
@@ -50,7 +51,11 @@ async def main_async(
 
     # Initialize the runner
     runner = Runner(
-        agent=get_root_agent(models, language_levels[level_code], tavily),
+        agent=get_root_agent(models,
+                             g3_thinking_level,
+                             language_levels[level_code],
+                             tavily
+                             ),
         app_name=APP_NAME,
         session_service=session_service,
         plugins=plugins
@@ -139,6 +144,14 @@ if __name__ == "__main__":
         help="Language level"
     )
     parser.add_argument(
+        "-T",
+        "--thinking_level",
+        type=str,
+        default="minimal",
+        choices=["minimal", "low", "medium", "high"],
+        help="Gemini3 thinking level"
+    )
+    parser.add_argument(
         "-m",
         "--sa_model",
         type=str,
@@ -149,7 +162,7 @@ if __name__ == "__main__":
         "-M",
         "--ma_model",
         type=str,
-        default="gemini-2.5-flash-preview-09-2025",
+        default="gemini-3-flash-preview",
         help="Main agent model name"
     )
     args = parser.parse_args()
@@ -166,7 +179,8 @@ if __name__ == "__main__":
                 args.tavily,
                 args.language_level,
                 args.ma_model,
-                args.sa_model
+                args.sa_model,
+                args.thinking_level,
             )
         )
     finally:
