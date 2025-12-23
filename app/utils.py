@@ -17,7 +17,7 @@ def load_json(data):
         pat = r'\{[^{}]*(?:{[^{}]*}[^{}]*)*\}'
         return json.loads(re.search(pat, data).group(0))
 
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, AttributeError):
         return {}
 
 
@@ -29,7 +29,7 @@ def get_prompt(file_name: str) -> str:
         raise FileNotFoundError(f"File not found: {file_name}")
 
     reader = pypdf.PdfReader(file_path)
-    pdf_text = "\n".join([page.extract_text() for page in reader.pages]).strip()
+    cv_info = "\n".join([page.extract_text() for page in reader.pages]).strip()
 
     # Use environment variables if provided, otherwise prompt the user
     # (for debugging purposes)
@@ -39,21 +39,21 @@ def get_prompt(file_name: str) -> str:
     else:
         print(f"Company URL: {company_url}")
 
-    job_description_url = os.getenv("JOB_DESCRIPTION_URL")
-    if not job_description_url:
-        job_description_url = input("Job description URL: ")
+    job_role_url = os.getenv("JOB_ROLE_URL")
+    if not job_role_url:
+        job_role_url = input("Job role URL: ")
     else:
-        print(f"Job description URL: {job_description_url}")
+        print(f"Job role URL: {job_role_url}")
 
     return f"""
 ### Company:
 {company_url}
 
-### Job description:
-{job_description_url}    
+### Job role url:
+{job_role_url}
 
-### UserCV:
-{pdf_text}
+### User CV:
+{cv_info}
 """
 
 

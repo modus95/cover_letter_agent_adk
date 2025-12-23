@@ -5,7 +5,6 @@ environment variables, initializes Vertex AI, and orchestrates the
 interaction with the agent engine.
 """
 
-import os
 import argparse
 import asyncio
 import inspect
@@ -17,11 +16,11 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 import vertexai
 from vertexai import agent_engines
 from cover_letter_agent.agent import root_agent
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 from google.api_core.exceptions import FailedPrecondition, NotFound
 
 
-load_dotenv()
+config = dotenv_values(".env_remote")
 
 
 def _get_remote_app(agent_name: str):
@@ -38,26 +37,28 @@ def create(**kwargs) -> agent_engines.AgentEngine:
 
     remote_app = kwargs["remote_app"]
     agent_name = kwargs["agent_name"]
+
+    adk_app = agent_engines.AdkApp(
+        agent=root_agent,
+        enable_tracing=True,
+    )
+
     agent_config = {
-        "agent_engine": remote_app,
+        "agent_engine": adk_app,
         "display_name": agent_name,
         "description": "Agent to generate a cover letter based on provided information",
         "requirements": ["google-cloud-aiplatform[adk,agent_engines]",
-                         "pydantic"],
+                         "pydantic",
+                         "tavily-python",
+                         ],
         "extra_packages": ["./vertex_utils.py",
                            "./sub_agents",
                            "./cover_letter_agent"],
-        "env_vars": {"TAVILY_API_KEY": os.getenv("TAVILY_API_KEY")}
+        "env_vars": {"TAVILY_API_KEY": config["TAVILY_API_KEY"]}
     }
 
     if remote_app is None:
         # Create a new agent engine (deployment)
-        adk_app = agent_engines.AdkApp(
-            agent=root_agent,
-            enable_tracing=True,
-        )
-        agent_config["agent_engine"] = adk_app
-
         remote_agent = agent_engines.create(**agent_config)
         print("✅ Agent deployed successfully!")
         print(f"🆔 Agent Engine ID: {remote_agent.resource_name}")
@@ -200,11 +201,11 @@ async def delete_all_sessions(**kwargs) -> None:
 
 def main(args_):
     """Main function"""
-    project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-    location = os.getenv("GOOGLE_CLOUD_LOCATION")
-    bucket = os.getenv("GOOGLE_CLOUD_STAGING_BUCKET")
-    agent_name = os.getenv("AGENT_NAME")
-    user_id = args_.user_id or os.getenv("USER_ID", "test_user")
+    project_id = config.get("GOOGLE_CLOUD_PROJECT")
+    location = config.get("GOOGLE_CLOUD_LOCATION")
+    bucket = config.get("GOOGLE_CLOUD_STAGING_BUCKET")
+    agent_name = config.get("AGENT_NAME")
+    user_id = args_.user_id or config.get("USER_ID", "test_user")
 
     vertexai.init(
         project=project_id,
@@ -213,7 +214,7 @@ def main(args_):
     )
 
     if not agent_name:
-        print("Please provide an agent name in the .env file.")
+        print("Please provide an agent name in the .env_remote file.")
         return
 
     remote_app = _get_remote_app(agent_name)

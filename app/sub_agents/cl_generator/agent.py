@@ -13,7 +13,9 @@ except ImportError:
     from app.vertex_utils import ResponseContent
 
 
-def get_cl_generator_agent(model, planner=None) -> LlmAgent:
+def get_cl_generator_agent(model,
+                           language_level,
+                           planner=None) -> LlmAgent:
     """Get cover letter generator agent."""
 
     return LlmAgent(
@@ -22,26 +24,26 @@ def get_cl_generator_agent(model, planner=None) -> LlmAgent:
         planner=planner,
         description="Agent to generate a cover letter based on provided information",
         instruction=\
-        """You are a professional cover letter generator agent.
+         f"""
+        You are a professional cover letter generator agent.
         Yout task is to generate a proffessional, well-structured cover letter based on:
-        - `company_web_researcher` sub-agent output:
-        {company_info} 
-        - `job_description_extractor_agent` output:
-        {job_description} 
-        - Information about the user's skills and experience from the provided CV. 
+        - `company_web_researcher` sub-agent output: {{company_info}} 
+        - `job_information_agent` sub-agent output: {{job_role_information}} 
+        - Information about the user's skills and experience from the User CV.
              
-        Take into account the constraints below:
         <Constraints>    
-        - The cover letter should be short and concise, up to 300 words.        
-        - ALWAYS include the bullet points of values that the user could bring to the company.
+        - Keep the cover letter brief and concise, up to 300 words.
         - Don't include any numerical metrics.
-        - Don't use complicated phrases. The writing style should correspond to the advanced 
-          intermediate English level (B2). 
+        </Constraints>
+
+        <Style>
+        - Use English grammar and vocabulary appropriate to the {language_level} level. 
+        - ALWAYS include the bullet points of values that the user could bring to the company.
         - Don't include any additional placeholders for date, subject line, company name, 
-          company address, etc. at the very beginning of the letter.    
+          company address, etc. in the beginning. 
         - Don't include any information about user's e-mail, phone number, job title, etc. 
           in the closing.
-        </Constraints>
+        </Style>
 
         <Output>
         **IMPORTANT:**
@@ -52,11 +54,11 @@ def get_cl_generator_agent(model, planner=None) -> LlmAgent:
         but return the clear reason of the failure with the "error" status.
 
         Your response MUST be valid JSON matching the `ResponseContent` structure:
-        {
+        {{
             "status": "success" or "error",
             "message": "The generated cover letter if the status is 'success'. 
              The error message with the reason of the failure if the status is 'error'"
-        }
+        }}
 
         DO NOT include any explanations or additional text outside the JSON response.
         </Output>

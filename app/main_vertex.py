@@ -2,23 +2,21 @@
 
 import asyncio
 import argparse
-import os
 import logging
 
 import vertexai
 from vertexai import agent_engines
 import utils
+from dotenv import dotenv_values
 
 
-from dotenv import load_dotenv
+config = dotenv_values(".env_remote")
 
-load_dotenv()
-
-project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-location = os.getenv("GOOGLE_CLOUD_LOCATION")
-bucket = os.getenv("GOOGLE_CLOUD_STAGING_BUCKET")
-agent_name = os.getenv("AGENT_NAME")
-USER_ID = "slu"
+project_id = config.get("GOOGLE_CLOUD_PROJECT")
+location = config.get("GOOGLE_CLOUD_LOCATION")
+bucket = config.get("GOOGLE_CLOUD_STAGING_BUCKET")
+agent_name = config.get("AGENT_NAME")
+user_id = config.get("USER_ID")
 
 vertexai.init(project=project_id,
               location=location,
@@ -40,15 +38,18 @@ async def main_async(file_name: str):
         # Process the user query through the agent
         agent_response = await utils.call_remote_agent_async(
             remote_agent,
-            USER_ID,
+            user_id,
             prompt
         )
 
         print("\nTHE AGENT RESPONSE:\n")
         if isinstance(agent_response, str):
             agent_response = utils.load_json(agent_response)
-        print(agent_response["status"].upper(),":")
-        print(agent_response["message"])
+        if agent_response:
+            print(agent_response["status"].upper(),":")
+            print(agent_response["message"])
+        else:
+            print("No response from the agent! Check the session details at Vertex AI.")
 
     else:
         print(f"Vertex AI remote agent '{agent_name}' not found!")

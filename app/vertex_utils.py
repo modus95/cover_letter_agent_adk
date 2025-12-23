@@ -27,26 +27,29 @@ class ResponseContent(BaseModel):
     )
 
 
-def get_planner(md: str) -> Optional[BuiltInPlanner]:
+def get_planner(md: str, thinking_level: str) -> Optional[BuiltInPlanner]:
     """
     Determines and returns a BuiltInPlanner based on the model version.
 
-    If the model version is 3 or greater, it returns a BuiltInPlanner 
-    configured with a low thinking level. Otherwise, it returns None.
+    If the model version (extracted from `md.model`) is 3 or greater,
+    it returns a BuiltInPlanner configured with a low thinking level.
+    Otherwise, it returns None.
 
     Args:
-        md: A string containing model information, (e.g., `md = "gemini-3.0-flash"`).
+        md: An object containing model information, expected to have a 'model'
+            attribute (e.g., `md.model = "gemini-3.0-flash"`).
+        thinking_level: The thinking level to use for the planner 
+        ("minimal", "low", "medium", "high").
 
     Returns:
         An instance of BuiltInPlanner if the model version is 3 or higher,
         otherwise None.
     """
-
     version = float(md.split("-")[1])
-    if version >= 3:
+    if version >= 3 and thinking_level in ["minimal", "low", "medium", "high"]:
         return BuiltInPlanner(
-            thinking_config=types.ThinkingConfig(thinking_level="low")
-            )
+            thinking_config=types.ThinkingConfig(thinking_level=thinking_level)
+        )
 
     return None
     
