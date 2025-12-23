@@ -11,6 +11,7 @@ from google.adk.sessions import InMemorySessionService
 from google.adk.plugins.logging_plugin import LoggingPlugin
 
 import utils
+from utils import AgentSettings
 from cover_letter_agent.agent import get_root_agent
 
 
@@ -65,23 +66,15 @@ if "is_error" not in st.session_state:
 
 # --------------------------------------------------------------------
 async def run_agent(
-    company_url: str,
-    job_role_url: str,
-    file_path: str,
-    models: dict,
-    g3_thinking_level: str,
-    language_level: str,
-    tavily_advanced_extraction: bool,
+    prompt: str,
+    agent_settings: AgentSettings,
     logging: bool,
 ) -> str:
     """Run the agent asynchronously."""
     session_service = InMemorySessionService()
 
     runner = Runner(
-        agent=get_root_agent(models,
-                             g3_thinking_level,
-                             language_level,
-                             tavily_advanced_extraction),
+        agent=get_root_agent(agent_settings),
         app_name=APP_NAME,
         session_service=session_service,
         plugins=[LoggingPlugin()] if logging else None
@@ -91,22 +84,6 @@ async def run_agent(
     new_session = await session_service.create_session(
         app_name=APP_NAME, user_id=USER_ID)
     session_id = new_session.id
-
-    cv_info = utils.read_pdf(file_path)
-
-    prompt = f"""
-    <Company url>
-    {company_url}
-    </Company>
-
-    <Job role url>
-    {job_role_url}
-    </Job>
-
-    <User CV>
-    {cv_info}
-    </User>
-    """
 
     # Process the user query through the agent
     agent_response = await utils.call_agent_async(
@@ -164,7 +141,9 @@ def main():
     )
 
     tavily_advanced_extraction = tavily_expander.toggle(
-        "Advanced extraction", value=False)
+        "Advanced extraction", value=False,
+        help="Enable if there is an issue with extracting the job description"
+    )
 
     logging = st.sidebar.toggle("*Logging*", value=False)
 
@@ -216,6 +195,16 @@ def main():
         with st.spinner(":blue[*Generating cover letter... This may take a minute.*]"):
             try:
                 temp_file_path = utils.save_uploaded_file(uploaded_file)
+                prompt = utils.get_prompt(company_url,
+                                          job_description_url,
+                                          temp_file_path)
+
+                agent_settings = AgentSettings(
+                    models=models,
+                    g3_thinking_level=g3_thinking_level,
+                    language_level=language_level,
+                    tavily_advanced_extraction=tavily_advanced_extraction
+                )
 
                 utils.setup_loggers(LOGFILE_NAME)
 
@@ -223,13 +212,8 @@ def main():
                 asyncio.set_event_loop(loop)
                 result = loop.run_until_complete(
                     run_agent(
-                        company_url,
-                        job_description_url,
-                        temp_file_path,
-                        models,
-                        g3_thinking_level,
-                        language_level,
-                        tavily_advanced_extraction,
+                        prompt,
+                        agent_settings,
                         logging,
                     )
                 )

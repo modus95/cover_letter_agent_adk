@@ -9,7 +9,7 @@ import logging
 import datetime
 import shutil
 from urllib.parse import urlparse
-
+from dataclasses import dataclass
 from typing import Optional
 from contextlib import suppress
 from pydantic import BaseModel, Field
@@ -50,6 +50,24 @@ class ResponseContent(BaseModel):
             " The error message if the status is 'error'."
             )
     )
+
+
+@dataclass
+class AgentSettings:
+    """
+    Represents the settings for an agent.
+
+    Attributes:
+        models (Optional[str | dict]): The name of the model or a dictionary 
+        specifying different models for sub-agents and the main agent.
+        g3_thinking_level (str): The thinking level of Gemini3 to use.
+        language_level (str): The language level (B1-C2) to use.
+        tavily_advanced_extraction (bool): Whether to use Tavily advanced extraction.
+    """
+    models: Optional[str | dict]
+    g3_thinking_level: str
+    language_level: str
+    tavily_advanced_extraction: bool
 
 
 def load_json(data):
@@ -177,6 +195,30 @@ def read_pdf(file_name: str) -> str:
                    pdf_text)
 
     return pdf_text
+
+
+def get_prompt(company_url: str,
+               job_role_url: str,
+               file_name: str) -> str:
+    """
+    Returns a formatted prompt string containing company URL, job role URL, and user CV.
+
+    Args:
+        company_url (str): The URL of the company.
+        job_role_url (str): The URL of the job role.
+        file_name (str): The path to the user CV file.
+    """
+    cv_info = read_pdf(file_name)
+    return f"""
+### Company url
+{company_url}
+
+### Job role url
+{job_role_url}
+
+### User CV
+{cv_info}
+"""
 
 
 def output_logging(logg: logging.Logger,

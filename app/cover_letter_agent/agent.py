@@ -1,53 +1,40 @@
 """This module defines AI agents and models for generating cover letters, utilizing Google ADK."""
 import logging
-from typing import Optional
-
 from google.adk.agents import ParallelAgent, SequentialAgent
 
 import sub_agents.web_researcher.agent as res
 import sub_agents.job_info.agent as jda
 import sub_agents.cl_generator.agent as clg
 
-from utils import define_model, get_planner
+from utils import define_model, get_planner, AgentSettings
 
 
 status_logger = logging.getLogger("agent_status_logger")
 
 
-def get_root_agent(models: Optional[str | dict],
-                   g3_thinking_level: str,
-                   language_level: str,
-                   tavily_advanced_extraction: bool = False):
+def get_root_agent(agent_settings: AgentSettings):
     """
-    Initializes and returns a root agent for cover letter generation.
+    Constructs and returns the root agent for the cover letter generation workflow.
 
-    This function sets up various AI sub-agents (web researcher, cover letter writer,
-    and a sequential agent to orchestrate them) using the specified model.
-    It configures retry options for API calls.
+    This function configures the necessary models and planners based on the provided
+    agent settings, initializes sub-agents for web research, job analysis, and
+    cover letter generation, and organizes them into a sequential execution pipeline.
 
     Args:
-        models: A string representing the model name to be used by all agents, 
-        or a dictionary specifying different models for sub-agents and the main agent 
-        (e.g., `{"sub_agents_model": "model_name_1", "main_agent_model": "model_name_2"}`).
-
-        language_level: The language level (B1-C2) to be used by the main agent for 
-        cover letter generation.
-        thinking_level: The thinking level of Gemini3 ("minimal", "low", "medium", "high").
-        For cover letter generation, it is recommended to use "minimal" or "low".
-        tavily_advanced_extraction: Whether to use Tavily advanced extraction.
+        agent_settings (AgentSettings): The configuration settings for the agents.
 
     Returns:
-        A SequentialAgent that orchestrates the web research and cover letter
-        writing process.
+        SequentialAgent: The high-level agent orchestrating the cover letter generation process.
     """
-    if isinstance(models, str):
-        sa_model = ma_model = define_model(models)
-    else:
-        sa_model = define_model(models["sub_agents_model"])
-        ma_model = define_model(models["main_agent_model"])
 
-    sa_planner = get_planner(sa_model, g3_thinking_level)
-    ma_planner = get_planner(ma_model, g3_thinking_level)
+    if isinstance(agent_settings.models, str):
+        sa_model = ma_model = define_model(agent_settings.models)
+    else:
+        sa_model = define_model(agent_settings.models["sub_agents_model"])
+        ma_model = define_model(agent_settings.models["main_agent_model"])
+
+    sa_planner = get_planner(sa_model, agent_settings.g3_thinking_level)
+    ma_planner = get_planner(ma_model, agent_settings.g3_thinking_level)
 
     # Logging the models, planners, and language level
     status_logger.info("Sub-agents models: %s", sa_model.model)
@@ -60,19 +47,19 @@ def get_root_agent(models: Optional[str | dict],
         status_logger.info("Main agent thinking level: %s",
                            ma_planner.thinking_config.thinking_level)
 
-    status_logger.info("Language level: %s", language_level)
-    status_logger.info("Gemini3 thinking level: %s", g3_thinking_level)
+    status_logger.info("Language level: %s", agent_settings.language_level)
+    status_logger.info("Gemini3 thinking level: %s", agent_settings.g3_thinking_level)
 
     #SUB-AGENTS:
     web_researcher_agent = res.get_web_researcher_agent(sa_model, sa_planner)
 
     job_role_agent = jda.get_job_role_agent(sa_model,
-                                            tavily_advanced_extraction,
+                                            agent_settings.tavily_advanced_extraction,
                                             sa_planner
                                             )
 
     cl_generator_agent = clg.get_cl_generator_agent(ma_model,
-                                                    language_level,
+                                                    agent_settings.language_level,
                                                     ma_planner
                                                     )
 
@@ -96,8 +83,10 @@ def get_root_agent(models: Optional[str | dict],
 
 
 root_agent = get_root_agent(
-    models="gemini-2.5-flash-preview-09-2025",
-    language_level="Upper-Intermediate (B2)",
-    g3_thinking_level="minimal",
-    tavily_advanced_extraction=False
+    AgentSettings(
+        models="gemini-2.5-flash-preview-09-2025",
+        language_level="Upper-Intermediate (B2)",
+        g3_thinking_level="minimal",
+        tavily_advanced_extraction=False
+        )
     )
