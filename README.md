@@ -131,3 +131,32 @@ Launch the agent using the Google Agent Development Kit's standard web interface
 adk web [options]
 ```  
 Run `adk web --help` to see available options.
+
+## 🐳 Docker
+
+You can also run the Streamlit application using Docker.
+
+### Building the Image
+
+To build the Docker image using the `Dockerfile` and `.dockerignore` files, run the following command from the project root:
+
+```bash
+docker build -t cl-agent-streamlit:1 .
+```
+
+> [!NOTE]
+> The version tag (e.g., `:1`) should be incremented each time you update the image to keep track of different builds.
+
+### Running the Container
+
+To run the container, use the following command (replace the placeholders with your actual API keys):
+
+```bash
+docker run --name cl-agent \
+  --rm -it \
+  -p 8501:8501 \
+  -e GOOGLE_API_KEY=<your_google_api_key> \
+  -e TAVILY_API_KEY=<your_tavily_api_key> \
+  -v "$(pwd)/logs:/cl_agent/logs" \
+  cl-agent-streamlit:1
+```

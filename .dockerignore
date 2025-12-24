@@ -1,0 +1,10 @@
+app/**/__pycache__
+app/**/*.py[cod]
+app/**/$py.class
+
+app/.env
+app/.env_remote
+app/.env.example
+app/deploy.py
+app/main.py
+app/data/
