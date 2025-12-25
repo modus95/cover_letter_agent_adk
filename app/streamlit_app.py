@@ -194,6 +194,8 @@ def main():
     if st.session_state.generating:
         with st.spinner(":blue[*Generating cover letter... This may take a minute.*]"):
             try:
+                utils.setup_loggers(LOGFILE_NAME)
+
                 temp_file_path = utils.save_uploaded_file(uploaded_file)
                 prompt = utils.get_prompt(company_url,
                                           job_description_url,
@@ -205,8 +207,6 @@ def main():
                     language_level=language_level,
                     tavily_advanced_extraction=tavily_advanced_extraction
                 )
-
-                utils.setup_loggers(LOGFILE_NAME)
 
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
