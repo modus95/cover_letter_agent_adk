@@ -9,7 +9,7 @@ An intelligent agentic workflow designed to generate tailored, professional cove
 - **Job Description Analysis**: Understands the requirements and nuances of the job posting utilizing **Tavily** [API](https://docs.tavily.com/documentation/api-reference/introduction).
 - **Context-Aware Generation**: Synthesizes all gathered data to write a non-pretentious, value-focused cover letter.
 - **Multi-Model Support**: Choose different Gemini models for sub-agents and the main generator.
-- **Language Level Customization**: Select specific foreign language proficiency levels (B1, B2, C1, C2).
+- **Language Level Customization**: Select specific English proficiency levels (B1, B2, C1, C2).
 - **Gemini 3.0 Thinking Level**: Control the reasoning depth (minimal, low, medium, high) for the latest Gemini models.
 
 ## 📂 Project Structure
@@ -47,16 +47,17 @@ To help monitor the process, the outputs of all sub-agents are logged in the `lo
 
 ## 📦 Requirements
 
-- Python >=3.10
+- `Python >=3.10`
 - `google-adk`
 - `google-cloud-aiplatform`
-- `google-genai`
-- `streamlit`
+- `streamlit==1.51.0`
 - `python-dotenv`
+- `tavily-python`
 - `nest_asyncio`
 - `pydantic`
 - `pypdf`
 - Access to Google Gemini API and Search tools.
+- Access to Tavily API (Get your free API key [here](https://docs.tavily.com/documentation/api-credits)).
 
 ## 🔧 Configuration
 
