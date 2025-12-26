@@ -101,6 +101,11 @@ def get_job_role_agent(model,
     )
     # --------- END TOOLS ---------
 
+    agent_tool = AgentTool(agent=job_role_fetch_agent)
+    # Patch for Vertex AI AttributeError: 'AgentTool' object has no attribute 'include_plugins'
+    if not hasattr(agent_tool, "include_plugins"):
+        agent_tool.include_plugins = []
+
     return LlmAgent(
         name="job_information_agent",
         model=model,
@@ -145,7 +150,7 @@ def get_job_role_agent(model,
         """,
         tools=[
             extract_web_content,
-            AgentTool(agent=job_role_fetch_agent)
+            agent_tool
         ],
         output_key="job_role_information",
     )

@@ -36,8 +36,11 @@ def get_root_agent(models: Optional[str | dict],
         A SequentialAgent that orchestrates the web research and cover letter
         writing process.
     """
-    sa_model = models["sub_agents_model"]
-    ma_model = models["main_agent_model"]
+    if isinstance(models, dict):
+        sa_model = models["sub_agents_model"]
+        ma_model = models["main_agent_model"]
+    else:
+        sa_model = ma_model = models
 
     sa_planner = vu.get_planner(sa_model, g3_thinking_level)
     ma_planner = vu.get_planner(ma_model, g3_thinking_level)
@@ -71,10 +74,11 @@ def get_root_agent(models: Optional[str | dict],
     return ra
 
 
-MODELS = {
-    "sub_agents_model": "gemini-2.5-flash",
-    "main_agent_model": "gemini-3-flash-preview"
-    }
+# MODELS = {
+#     "sub_agents_model": "gemini-2.5-flash",
+#     "main_agent_model": "gemini-3-flash-preview"
+#     }
+MODELS = "gemini-2.5-flash"
 
 root_agent = get_root_agent(models=MODELS,
                             g3_thinking_level="low",
