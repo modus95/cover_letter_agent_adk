@@ -9,6 +9,7 @@ from contextlib import suppress
 import logging
 import pypdf
 import streamlit.components.v1 as components
+import cover_letter_agent.agent as agent
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +90,18 @@ async def call_remote_agent_async(
     # Create a new session
     remote_session = await remote_agent.async_create_session(user_id=user_id)
     session_id = remote_session['id']
+
+    if isinstance(agent.MODELS, dict):
+        # pylint: disable=E1126
+        logger.info("Sub-agents models: %s", agent.MODELS["sub_agents_model"])
+        logger.info("Main agent model: %s", agent.MODELS["main_agent_model"])
+    else:
+        logger.info("Agent models: %s", agent.MODELS)
+    logger.info("Language level: %s", agent.LANG_LEVEL)
+    logger.info("Gemini3 thinking level: %s", agent.G3_THINK)
+    logger.info("Tavily advanced extraction: %s", agent.TAVILY_ADVANCE)
+    logger.info("\n")
+
     logger.info("Session ID: %s", session_id)
     logger.info(
         "See the session details at Vertex AI:\n"
