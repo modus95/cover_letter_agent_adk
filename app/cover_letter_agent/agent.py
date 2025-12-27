@@ -79,9 +79,12 @@ def get_root_agent(models: Optional[str | dict],
 #     "main_agent_model": "gemini-3-flash-preview"
 #     }
 MODELS = "gemini-2.5-flash"
+G3_THINK = "low"
+LANG_LEVEL = "Upper-Intermediate (B2)"
+TAVILY_ADVANCE = False
 
 root_agent = get_root_agent(models=MODELS,
-                            g3_thinking_level="low",
-                            language_level="Upper-Intermediate (B2)",
-                            tavily_advanced_extraction=False
+                            g3_thinking_level=G3_THINK,
+                            language_level=LANG_LEVEL,
+                            tavily_advanced_extraction=TAVILY_ADVANCE
                             )

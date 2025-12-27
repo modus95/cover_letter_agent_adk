@@ -99,5 +99,5 @@ div[data-baseweb="popover"] div {
 /* "Logging" toggle label style */
 .stCheckbox:has(input[aria-label="*Logging*"]) label p {
     font-size: 0.9rem !important;
-    color: rgb(28, 131, 225) !important;
+    color: #999 !important;
 }
