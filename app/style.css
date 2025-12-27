@@ -54,10 +54,10 @@ div[data-baseweb="popover"] div {
     font-size: 0.8rem !important;
 }
 
-[data-testid="stExpander"] {
+/* [data-testid="stExpander"] {
     border: 2px solid rgb(28, 131, 225) !important;
     border-radius: 8px;
-}
+} */
 
 /* Dynamic border colors based on status */
 [data-testid="stColumn"]:has([data-status="success"]) {

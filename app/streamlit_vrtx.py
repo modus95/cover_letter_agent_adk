@@ -2,24 +2,35 @@
 
 import asyncio
 import os
+import logging
 
-import streamlit as st
 import nest_asyncio
-from dotenv import load_dotenv
-from google.adk.runners import Runner
-from google.adk.sessions import InMemorySessionService
-from google.adk.plugins.logging_plugin import LoggingPlugin
+import streamlit as st
+from dotenv import dotenv_values
 
+import vertexai
+from vertexai import agent_engines
 import utils
-from cover_letter_agent.agent import get_root_agent
 
 
-load_dotenv()
+logging.basicConfig(level=logging.INFO)
+
+config = dotenv_values(".env_remote")
+
+project_id = config.get("GOOGLE_CLOUD_PROJECT")
+location = config.get("GOOGLE_CLOUD_LOCATION")
+bucket = config.get("GOOGLE_CLOUD_STAGING_BUCKET")
+agent_name = config.get("AGENT_NAME")
+user_id = config.get("USER_ID")
+
+vertexai.init(project=project_id,
+              location=location,
+              staging_bucket=bucket)
+
 nest_asyncio.apply()
 
 APP_NAME = "Cover Letter Agent"
-USER_ID = "streamlit_user"
-LOGFILE_NAME = "sub_agents_output.log"
+# LOGFILE_NAME = "sub_agents_output.log"
 
 
 # Page configuration
@@ -46,8 +57,11 @@ st.html(f"""
 </style>
 """)
 
-gemini_expander = st.sidebar.expander(":blue[**Gemini model**]", expanded=False)
-tavily_expander = st.sidebar.expander(":blue[**Tavily Extractor settings**]", expanded=False)
+st.sidebar.markdown("", help="All controls are disabled since the agent "
+                             "is running on the remote Vertex AI server")
+gemini_expander = st.sidebar.expander(":grey[Gemini model]", expanded=False)
+language_level_expander = st.sidebar.expander(":grey[Language level]", expanded=False)
+tavily_expander = st.sidebar.expander(":grey[Tavily Extractor settings]", expanded=False)
 
 # ---- SESSION STATE ----
 if "generating" not in st.session_state:
@@ -62,79 +76,59 @@ if "is_error" not in st.session_state:
         "message": ""
     }
 
-# --------------------------------------------------------------------
-async def run_agent(
-    company_url: str,
-    job_description_url: str,
-    file_path: str,
-    models: dict,
-    logging: bool,
-    tavily_advanced_extraction: bool
-) -> str:
-    """Run the agent asynchronously."""
-    session_service = InMemorySessionService()
-
-    runner = Runner(
-        agent=get_root_agent(models, tavily_advanced_extraction),
-        app_name=APP_NAME,
-        session_service=session_service,
-        plugins=[LoggingPlugin()] if logging else None
-    )
-
-    # Create a new session
-    new_session = await session_service.create_session(
-        app_name=APP_NAME, user_id=USER_ID)
-    session_id = new_session.id
-
-    prompt = f"""
-    ### Company:
-    {company_url}
-
-    ### Job description:
-    {job_description_url}
-    """
-
-    # Process the user query through the agent
-    agent_response = await utils.call_agent_async(
-        runner,
-        USER_ID,
-        session_id,
-        prompt,
-        file_path
-    )
-
-    return agent_response
-
 
 def main():
     """Main entry point for the Streamlit app."""
 
-    t1, t2 = st.columns([0.96, 0.04], vertical_alignment="bottom")
-    t1.subheader(":blue[*Cover Letter AI Agent*]", divider="blue")
-    t2.image("adk_logo.png", width="content")
+    t1, t2, t3 = st.columns([0.94, 0.03, 0.03], vertical_alignment="bottom")
+    t1.subheader(":orange[*Cover Letter AI Agent (Vertex AI)*]", divider="orange")
+    t2.image("Vertex_AI_Logo.svg.png", width="content")
+    t3.image("adk_logo.png", width="content")
 
     # ----- SIDE BAR -----
-    models = {
-        "sub_agents_model": gemini_expander.selectbox(
-                            "Sub-agents model",
-                            options=["gemini-2.5-flash-preview-09-2025",
-                                    "gemini-2.5-pro",
-                                    "gemini-3-pro-preview (Low thinking)"],
-                            index=0
-                        ),
-        "main_agent_model": gemini_expander.selectbox(
-                            "Main agent model",
-                            options=["gemini-2.5-flash-preview-09-2025",
-                                    "gemini-2.5-pro",
-                                    "gemini-3-pro-preview (Low thinking)"],
-                            index=2
-                        )
-    }
+    # All controls are disabled with using a remote Vertex AI agent
+    gemini_expander.selectbox(
+        "Sub-agents model",
+        options=["gemini-2.5-flash-preview-09-2025",
+                "gemini-3-flash-preview"],
+        index=0,
+        disabled=True
+    )
+    gemini_expander.selectbox(
+        "Main agent model",
+        options=["gemini-2.5-flash-preview-09-2025",
+                "gemini-3-flash-preview"],
+        index=0,
+        disabled=True
+    )
 
-    tavily_advanced_extraction = tavily_expander.toggle(
-        "Advanced extraction", value=False)
+    gemini_expander.selectbox(
+        "Gemini3 thinking level",
+        options=["minimal", "low", "medium", "high"],
+        index=0,
+        help=("The `minimal`/`low` thinking level is preferred "
+              "for cover letter generation"),
+        disabled=True
+    )
 
-    logging = st.sidebar.toggle("*Logging*", value=False)
+    language_level_expander.radio(
+        "Language level",
+        options=["Intermediate (B1)",
+                 "Upper-Intermediate (B2)",
+                 "Advanced (C1)",
+                 "Proficient (C2)",
+                ],
+        index=1,
+        disabled=True,
+        label_visibility="collapsed"
+    )
+
+    tavily_expander.toggle(
+        "Advanced extraction", value=False, disabled=True,
+        help="Enable if there is an issue with extracting the job description"
+    )
+
+    st.sidebar.toggle("*Logging*", value=False, disabled=True)
 
     # ----- MAIN PAGE -----
     left, right = st.columns(
@@ -149,14 +143,14 @@ def main():
             placeholder="https://www.example.com"
         )
 
-    job_description_url = left.text_input(
+    job_role_url = left.text_input(
             "**Job Description URL**",
             placeholder="https://careers.example.com/job/123"
         )
 
     uploaded_file = left.file_uploader(
-        "**Upload your CV (PDF, DOC)**",
-        type=["pdf", "doc", "docx"]
+        "**Upload your CV (PDF)**",
+        type=["pdf"]
     )
 
     generate_clicked = left.button(
@@ -167,7 +161,7 @@ def main():
 
     # User clicked button
     if generate_clicked:
-        if not company_url or not job_description_url or not uploaded_file:
+        if not company_url or not job_role_url or not uploaded_file:
             left.warning("Please fill in all fields and upload your CV.")
         else:
             st.session_state.generating = True
@@ -183,25 +177,33 @@ def main():
     if st.session_state.generating:
         with st.spinner(":blue[*Generating cover letter... This may take a minute.*]"):
             try:
-                temp_file_path = utils.save_uploaded_file(uploaded_file)
+                # utils.setup_loggers(LOGFILE_NAME)
+                prompt = utils.get_prompt(uploaded_file,
+                                          company_url,
+                                          job_role_url,
+                                          )
 
-                utils.setup_loggers(LOGFILE_NAME)
+                existing_agents = list(agent_engines.list(filter=f'display_name={agent_name}'))
+                if existing_agents:
+                    remote_agent = existing_agents[0]
 
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                result = loop.run_until_complete(
-                    run_agent(
-                        company_url,
-                        job_description_url,
-                        temp_file_path,
-                        models,
-                        logging,
-                        tavily_advanced_extraction
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    result = loop.run_until_complete(
+                        utils.call_remote_agent_async(
+                            remote_agent,
+                            user_id,
+                            prompt
+                        )
                     )
-                )
 
-                # Save the result to session_state (PERSIST)
-                st.session_state.generated_cover_letter = result
+                    # Save the result to session_state (PERSIST)
+                    st.session_state.generated_cover_letter = result
+
+                    # Save the log file as `sub_agents_output_<company_domain>.log`
+                    # utils.copy_log_file(LOGFILE_NAME, company_url)
+                else:
+                    raise RuntimeError(f"Vertex AI remote agent '{agent_name}' not found!")
 
             except RuntimeError as e:
                 st.session_state.is_error = {
@@ -210,9 +212,6 @@ def main():
                 }
 
             finally:
-                if os.path.exists(temp_file_path):
-                    os.remove(temp_file_path)
-
                 # ENABLE the button again
                 st.session_state.generating = False
                 st.rerun()

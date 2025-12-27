@@ -1,5 +1,5 @@
 vertexai
-# streamlit==1.51.0
+streamlit==1.51.0
 python-dotenv
 nest_asyncio
 pypdf
