@@ -1,4 +1,5 @@
 #!/bin/bash
 
 source .venv/bin/activate
-streamlit run app/streamlit_app.py
+cd app
+streamlit run streamlit_app.py
