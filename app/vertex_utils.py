@@ -1,4 +1,8 @@
-"""Utility functions for agent interactions and asynchronous operations."""
+"""
+Utility functions and data models for interacting with Vertex AI and Gemini models.
+Should be deployed in the Vertex AI Agent Engine.
+"""
+
 
 from typing import Optional
 from pydantic import BaseModel, Field

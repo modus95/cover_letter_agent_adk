@@ -1,4 +1,11 @@
-"""Streamlit application for the Cover Letter AI Agent."""
+"""
+Streamlit application for interacting with a Vertex AI-powered Cover Letter Agent.
+
+This module initializes the Vertex AI environment, loads configuration from environment 
+variables, and provides a user interface for generating and managing cover letters 
+using Google Cloud's Agent Engine.
+"""
+
 
 import asyncio
 import os

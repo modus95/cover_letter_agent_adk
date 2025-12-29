@@ -1,8 +1,9 @@
 """
-This script handles the deployment and execution of a Vertex AI agent,
-specifically a cover letter generation agent. It sets up the necessary
-environment variables, initializes Vertex AI, and orchestrates the
-interaction with the agent engine.
+Module for deploying and managing the Cover Letter Agent in 
+the Google Cloud Vertex AI Agent Engine.
+
+This script provides functionality to create, update, and retrieve agent engine 
+deployments using the Vertex AI SDK, including managing remote sessions.
 """
 
 import argparse

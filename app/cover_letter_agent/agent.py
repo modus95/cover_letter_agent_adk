@@ -1,4 +1,15 @@
-"""This module defines AI agents and models for generating cover letters, utilizing Google ADK."""
+"""
+This module provides the orchestration logic for the cover letter generation agent.
+It defines the `get_root_agent` function, which constructs a multi-agent system
+comprising a web researcher, a job role analyzer, and a cover letter generator.
+
+In this module, a user can set the key parameters of the agent to be deployed 
+in the Vertex AI Agent Engine (see the Key parameters section below). 
+After setting the parameters, the agent deployment in the Vertex AI Agent Engine 
+should be updated (`python3 deploy_vertex.py -m create`)
+"""
+
+
 from typing import Optional
 
 from google.adk.agents import ParallelAgent, SequentialAgent
@@ -73,6 +84,8 @@ def get_root_agent(models: Optional[str | dict],
 
     return ra
 
+# -----------------------------------------------------
+# Key parameters for the agent on Vertex AI Agent Engine
 
 # MODELS = {
 #     "sub_agents_model": "gemini-2.5-flash",

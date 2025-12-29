@@ -1,4 +1,10 @@
-"""This module defines the main entry point for the cover letter agent."""
+"""
+Main entry point for the Vertex AI Cover Letter Agent.
+
+This module initializes the Vertex AI environment and provides the main execution
+logic for interacting with the cover letter generation agent deployed in the
+Google Cloud's Vertex AI Agent Engine.
+"""
 
 import asyncio
 import argparse
