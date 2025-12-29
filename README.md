@@ -1,27 +1,31 @@
-# Cover Letter Agent (Google ADK)
+# Cover Letter Agent (Vertex AI Deployment)
 
-An intelligent agentic workflow designed to generate tailored, professional cover letters. This project utilizes **Google's ADK (Agent Development Kit)** and **Gemini models** to research company information, parse your CV, and analyze job descriptions to craft the perfect cover letter.
+An intelligent agentic workflow designed to generate tailored, professional cover letters. This project utilizes a remote agent deployed in **Google's Vertex AI Agent Engine** to research company information, parse your CV, and analyze job descriptions to craft the perfect cover letter.
 
 ## 🚀 Features
 
-- **Automated Company Research**: Scours the web for company culture, values, mission, and vision using **Google Search** and **Tavily** (optional advanced extraction).
-- **CV Parsing**: Extracts key details (Summary, Skills, Experience, Education) from your PDF CV using the `cv_parser_agent`.
-- **Job Description Analysis**: Understands the requirements and nuances of the job posting.
+- **Vertex AI Agent Engine**: The agent is deployed as a remote agent in Google Cloud, ensuring robust and scalable performance.
+- **Automated Company Research**: Scours the web for company culture, values, mission, and vision using **Google Search** .
+- **CV Parsing**: Extracts key details (Summary, Skills, Experience, Education) from your PDF CV.
+- **Job Description Analysis**: Understands the requirements and nuances of the job posting utilizing **Tavily** [API](https://docs.tavily.com/documentation/api-reference/introduction).
 - **Context-Aware Generation**: Synthesizes all gathered data to write a non-pretentious, value-focused cover letter.
 - **Multi-Model Support**: Choose different Gemini models for sub-agents and the main generator.
+- **Language Level Customization**: Select specific English proficiency levels (B1, B2, C1, C2).
+- **Gemini 3.0 Thinking Level**: Control the reasoning depth (minimal, low, medium, high) for the latest Gemini models.
 
 ## 📂 Project Structure
 
-The project code is organized within the `app/` directory:
+The project is organized to support Vertex AI deployment:
 
 ```
 app/
-├── cover_letter_agent/  # Main agent logic and orchestration
-├── sub_agents/          # Individual specialized agents (researcher, parser, etc.)
-├── main.py              # CLI entry point for local execution
-├── streamlit_app.py     # Streamlit web application
-├── utils.py             # Utility functions
-└── .env                 # Configuration file
+├── cover_letter_agent/  # Main agent logic and configuration
+│   └── agent.py         # Agent definition and parameter settings
+├── sub_agents/          # Individual specialized agents
+├── deploy_vertex.py     # Script to deploy and manage the remote agent
+├── vertex_utils.py      # Utilities for Vertex AI interactions
+├── requirements.txt     # Python dependencies
+└── .env_remote          # Configuration for remote deployment
 ```
 
 ## 🛠️ Architecture
@@ -29,61 +33,153 @@ app/
 The system is built using a **Sequential Agent** that orchestrates a **Parallel Research Team**:
 
 1.  **Parallel Research Team** (Runs simultaneously):
-    *   `web_researcher_agent`: Uses Google Search (or Tavily) to find company insights.
-    *   `cv_parser_agent`: Parses the uploaded PDF CV to extract professional details.
-    *   `job_description_agent`: Extracts and analyzes text from the job description URL.
+    *   `web_researcher_agent`: Uses Google Search to find company insights.
+    *   `job_information_agent`: Uses Tavily API to obtain information about a job role.
 
 2.  **Cover Letter Generator** (`cl_generator_agent`):
-    *   Takes the aggregated outputs from the research team.
+    *   Takes the aggregated outputs from the research team and the parsed CV.
     *   Generates the final cover letter using a Gemini model.
 
 ## 📦 Requirements
 
-- Python 3.x
-- `google-adk`
-- `google-genai`
-- `streamlit == 1.51.0`
+- Python 3.10+
+- `vertexai`
+- `streamlit==1.51.0`
 - `python-dotenv`
+- `nest_asyncio`
+- `pypdf`
 - Access to Google Gemini API and Search tools.
+- Access to Tavily API (Get your free API key [here](https://docs.tavily.com/documentation/api-credits)).
+
+## 📋 Prerequisites
+In order to deploy the ADK agent to production using Vertex AI Agent Engine, you need to have the following prerequisites:
+1.  A Google Cloud Project with the essential APIs enabled:
+    * Vertex AI API - For AI models and Agent Engine.
+    * Cloud Storage API - For staging bucket
+    * Cloud Build API - For building agent containers
+    * Cloud Run Admin API - For deployment infrastructure
+    * Artifact Registry API - For container storage
+
+2.  A Google Cloud Storage bucket for staging the agent.
+3.  Authentication setup with Google Cloud CLI installed and configured.
+
 
 ## 🔧 Configuration
-
-1.  Clone the repository.
-2.  Install dependencies.
-3.  Create a `.env` file in the `app/` directory (or root) and add your API keys:
-    ```env
-    GOOGLE_API_KEY=your_api_key_here
-    GOOGLE_CLOUD_PROJECT=your_project_id
-    GOOGLE_CLOUD_LOCATION=your_location
-    AGENT_NAME=your_agent_name
-    # Optional
-    TAVILY_API_KEY=your_tavily_key
+1.  Clone the repository (`deploy_gcp` branch).
+2.  Install dependencies:
+    ```bash
+    pip install -r app/requirements.txt
     ```
+3.  Create a `.env_remote` file in the `app/` directory and add your prerequisites:
+    ```env
+    GOOGLE_GENAI_USE_VERTEXAI=True
+    GOOGLE_CLOUD_PROJECT=<project_id>
+    GOOGLE_CLOUD_LOCATION=<location>
+    AGENT_NAME=<agent_name>
+    GOOGLE_CLOUD_STAGING_BUCKET=gs://<bucket_name>
+    USER_ID=<user_id>
+    TAVILY_API_KEY=<tavily_api_key>
+    ```
+
+## ☁️ Vertex AI Deployment
+
+The project includes `deploy_vertex.py` to handle the full lifecycle of the agent in Vertex AI Agent Engine.
+
+### 1. Setup Environment
+
+Ensure you have a `.env_remote` file in the `app/` directory with the necessary Google Cloud credentials and Agent Engine settings.
+
+### 2. Manage Deployments
+
+Use `deploy_vertex.py` to create, update, or delete your agent deployment.
+
+**Deploy / Update Agent:**
+After changing code or `agent.py` configuration, run this to update the remote agent.
+```bash
+python3 app/deploy_vertex.py -m create
+```
+
+**List Deployments:**
+```bash
+python3 app/deploy_vertex.py -m list
+```
+
+**Delete Deployment:**
+```bash
+python3 app/deploy_vertex.py -m delete -i <RESOURCE_ID>
+```
+
+### 3. Manage Sessions
+
+You can create and manage remote sessions for testing or interaction.
+
+**Create Session:**
+```bash
+python3 app/deploy_vertex.py -m create_session
+```
+
+**List Sessions:**
+```bash
+python3 app/deploy_vertex.py -m list_sessions
+```
+
+**Delete Specific Session:**
+```bash
+python3 app/deploy_vertex.py -m delete_session -i <SESSION_ID>
+```
+
+**Delete All Sessions:**
+```bash
+python3 app/deploy_vertex.py -m delete_all_sessions
+```
+
+## 🚀 Development
+To change key parameters of the remote agent (Model, Thinking Level, Language Proficiency, Tavily settings), you must modify the `app/cover_letter_agent/agent.py` file directly (locate the "Key parameters" section at the bottom of the file):
+```python
+# Key parameters for the agent on Vertex AI Agent Engine
+
+# MODELS can be a string (same model for all) or dict:
+# MODELS = {
+#     "sub_agents_model": "gemini-2.5-flash",
+#     "main_agent_model": "gemini-3-flash-preview"
+# }
+MODELS = "gemini-2.5-flash"
+
+# Thinking level for Gemini 3 models: ["minimal", "low", "medium", "high"]
+G3_THINK = "low"
+
+# Language proficiency level for the generated letter:
+# ["Intermediate (B1)", "Upper-Intermediate (B2)", "Advanced (C1)", "Proficient (C2)"]
+LANG_LEVEL = "Upper-Intermediate (B2)"
+
+# Enable Tavily Advanced Extraction (requires API key)
+TAVILY_ADVANCE = False
+```
+
+> ℹ️ After changing any of these values, you **must update the deployment** for the changes to take effect (see **Vertex AI Deployment** section).
 
 ## 🏃 Usage
 
-You can run the agent in three different ways depending on your preference.
+You can run the agent in two different ways:
 
 ### 1. Streamlit Web Application
 
 The most user-friendly way to interact with the agent. Provides a graphical interface for uploading your CV and entering URLs.
 
+![Cover Letter Agent UI](screenshots/web_ui.png)
+
 ```bash
-streamlit run app/streamlit_app.py
+./cl_agent.sh
 ```
 
-**Features:**
-- Sidebar for selecting **Sub-agents model** and **Main agent model** (e.g., `gemini-2.5-flash-preview`).
-- Toggle for **Tavily Advanced Extraction**.
-- Real-time status updates and logging toggle.
-- Copy-to-clipboard functionality for the generated letter.
+> ℹ️ Since this project utilizes a remote agent deployed in Vertex AI, **all agent settings in the UI sidebar are disabled**. See **Development** section for instructions on how to change key parameters of the remote agent.
 
 ### 2. CLI (Command Line Interface)
 
-Run the agent directly from the terminal using `app/main.py`. This method is useful for quick tests or automation.
+Run the agent directly from the terminal using `app/main_vertex.py`. This method is useful for quick tests or automation.
 
 ```bash
-python app/main.py -f path/to/your_cv.pdf [options]
+python app/main_vertex.py -f path/to/your_cv.pdf
 ```
 
 #### Arguments
@@ -91,23 +187,39 @@ python app/main.py -f path/to/your_cv.pdf [options]
 | Argument | Long Flag | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `-f` | `--file_name` | **Required** | Path to the PDF CV file. |
-| `-v` | `--verbose` | `False` | Enable verbose logging to see detailed agent thoughts/actions. |
-| `-t` | `--tavily` | `False` | Enable Tavily advanced extraction for web research. |
-| `-m` | `--sa_model` | `gemini-2.5-flash-preview-09-2025` | Model name used by sub-agents (researcher, parser, etc.). |
-| `-M` | `--ma_model` | `gemini-3-pro-preview` | Model name used by the main agent for final generation. |
-
-#### Example
-
-```bash
-python app/main.py -f ./my_cv.pdf --verbose --tavily --ma_model gemini-2.5-pro
-```
 
 *Note: You will be prompted to enter the Company URL and Job Description URL after the script starts if they are not set in environment variables.*
 
-### 3. Google ADK Web UI
+## 📊 Logging
+The agent provides real-time logging in the console, detailing the current agent parameters and session ID.   
+It also provides a link to the remote agent session in Vertex AI Agent Engine to track the session events.  
+    
+![Console log](screenshots/Console_log.png)
 
-Launch the agent using the Google Agent Development Kit's standard web interface.
+## 🐳 Docker
+
+You can also run the Streamlit application using Docker.
+
+### Building the Image
+
+To build the Docker image using the `Dockerfile` and `.dockerignore` files, run the following command from the project root:
 
 ```bash
-adk web
+docker build -t cl-remote-agent:1 .
 ```
+
+> ℹ️
+> The version tag (e.g., `:1`) should be incremented each time you update the image to keep track of different builds.
+
+### Running the Container
+
+To run the container, use the following command (replace the placeholders with your actual API keys):
+
+<!-- ```bash
+docker run --name cl-remote-agent \
+  --rm -it \
+  -p 8501:8501 \
+  -e GOOGLE_API_KEY=<your_google_api_key> \
+  -e TAVILY_API_KEY=<your_tavily_api_key> \
+  cl-remote-agent:1
+``` -->
