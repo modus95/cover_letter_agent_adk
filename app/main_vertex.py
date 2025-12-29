@@ -44,6 +44,7 @@ async def main_async(file_name: str):
         # Process the user query through the agent
         agent_response = await utils.call_remote_agent_async(
             remote_agent,
+            project_id,
             user_id,
             prompt
         )

@@ -199,6 +199,7 @@ def main():
                     result = loop.run_until_complete(
                         utils.call_remote_agent_async(
                             remote_agent,
+                            project_id,
                             user_id,
                             prompt
                         )

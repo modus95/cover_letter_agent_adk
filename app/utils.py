@@ -82,6 +82,7 @@ async def _last_or_default(generator, default=None):
 
 async def call_remote_agent_async(
     remote_agent,
+    project_id: str,
     user_id: str,
     prompt: str
     ):
@@ -104,9 +105,10 @@ async def call_remote_agent_async(
 
     logger.info("Session ID: %s", session_id)
     logger.info(
-        "See the session details at Vertex AI:\n"
-        "https://console.cloud.google.com/vertex-ai/agents/locations/europe-west4/agent-engines/"
-        "7880138263619436544/playground?session=%s&project=gen-lang-client-0851419956", session_id)
+        "See the session details in Vertex AI:\n"
+        "https://console.cloud.google.com/vertex-ai/agents/locations/%s/"
+        "agent-engines/%s/playground?session=%s&project=%s", 
+        remote_agent.location, remote_agent.name, session_id, project_id)
 
     events_generator = remote_agent.async_stream_query(
         user_id=user_id,
