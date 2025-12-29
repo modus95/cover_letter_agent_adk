@@ -1,0 +1,16 @@
+app/**/__pycache__
+app/**/*.py[cod]
+app/**/$py.class
+
+app/.env
+app/.env_remote
+app/.env.example
+app/.env_remote.example
+
+app/cover_letter_agent/
+app/sub_agents/
+app/data/
+
+app/deploy_vertex.py
+app/main_vertex.py
+app/vertex_utils.py
