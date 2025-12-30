@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements.txt and install Python dependencies
 COPY app/requirements.txt ./app/
-RUN pip3 install --no-cache-dir -r app/requirements.txt
+RUN pip3 install --upgrade pip && \
+    pip3 install --no-cache-dir -r app/requirements.txt
 
 # Copy the rest of the application code into the app directory
 COPY app/ ./app/

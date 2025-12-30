@@ -1,0 +1,13 @@
+#!/bin/bash
+
+docker run --name cl_remote_agent \
+--rm -it -p 8501:8501 \
+-e GOOGLE_GENAI_USE_VERTEXAI=True \
+-e GOOGLE_CLOUD_PROJECT=<GOOGLE_CLOUD_PROJECT_ID> \
+-e GOOGLE_CLOUD_LOCATION=<GOOGLE_CLOUD_LOCATION (e.g. us-central1)> \
+-e GOOGLE_CLOUD_STAGING_BUCKET=<gs://google_cloud_bucket> \
+-e AGENT_NAME=cover_letter_agent \
+-e USER_ID=<user_id> \
+-e TAVILY_API_KEY=<OUR_TAVILY_API_KEY> \
+-v "$HOME/.config:/root/.config" \
+cl-remote-agent

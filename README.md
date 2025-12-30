@@ -43,12 +43,11 @@ The system is built using a **Sequential Agent** that orchestrates a **Parallel 
 ## 📦 Requirements
 
 - Python 3.10+
-- `vertexai`
+- `google-cloud-aiplatform==1.128.0`
 - `streamlit==1.51.0`
 - `python-dotenv`
 - `nest_asyncio`
 - `pypdf`
-- Access to Google Gemini API and Search tools.
 - Access to Tavily API (Get your free API key [here](https://docs.tavily.com/documentation/api-credits)).
 
 ## 📋 Prerequisites
@@ -213,13 +212,18 @@ docker build -t cl-remote-agent:1 .
 
 ### Running the Container
 
-To run the container, use the following command (replace the placeholders with your actual API keys):
+To run the container, use the following command (replace the placeholders with Google Cloud prerequisites and your actual API keys):
 
-<!-- ```bash
-docker run --name cl-remote-agent \
-  --rm -it \
-  -p 8501:8501 \
-  -e GOOGLE_API_KEY=<your_google_api_key> \
-  -e TAVILY_API_KEY=<your_tavily_api_key> \
-  cl-remote-agent:1
-``` -->
+```bash
+docker run --name cl_remote_agent \
+--rm -it -p 8501:8501 \
+-e GOOGLE_GENAI_USE_VERTEXAI=True \
+-e GOOGLE_CLOUD_PROJECT=<GOOGLE_CLOUD_PROJECT_ID> \
+-e GOOGLE_CLOUD_LOCATION=<GOOGLE_CLOUD_LOCATION (e.g. us-central1)> \
+-e GOOGLE_CLOUD_STAGING_BUCKET=<gs://google_cloud_bucket> \
+-e AGENT_NAME=cover_letter_agent \
+-e USER_ID=<user_id> \
+-e TAVILY_API_KEY=<OUR_TAVILY_API_KEY> \
+-v "$HOME/.config:/root/.config" \
+cl-remote-agent:1
+```
