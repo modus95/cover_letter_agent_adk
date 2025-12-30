@@ -1,0 +1,6 @@
+{
+  "MODELS": "gemini-2.5-flash",
+  "G3_THINK": "low",
+  "LANG_LEVEL": "Upper-Intermediate (B2)",
+  "TAVILY_ADVANCE": false
+}

@@ -24,11 +24,11 @@ logging.basicConfig(level=logging.INFO)
 
 config = dotenv_values(".env_remote")
 
-project_id = config.get("GOOGLE_CLOUD_PROJECT")
-location = config.get("GOOGLE_CLOUD_LOCATION")
-bucket = config.get("GOOGLE_CLOUD_STAGING_BUCKET")
-agent_name = config.get("AGENT_NAME")
-user_id = config.get("USER_ID")
+project_id = config.get("GOOGLE_CLOUD_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT")
+location = config.get("GOOGLE_CLOUD_LOCATION") or os.getenv("GOOGLE_CLOUD_LOCATION")
+bucket = config.get("GOOGLE_CLOUD_STAGING_BUCKET") or os.getenv("GOOGLE_CLOUD_STAGING_BUCKET")
+agent_name = config.get("AGENT_NAME") or os.getenv("AGENT_NAME")
+user_id = config.get("USER_ID") or os.getenv("USER_ID")
 
 vertexai.init(project=project_id,
               location=location,

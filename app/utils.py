@@ -9,7 +9,18 @@ from contextlib import suppress
 import logging
 import pypdf
 import streamlit.components.v1 as components
-import cover_letter_agent.agent as agent
+
+
+# Load configuration from JSON file
+_CONFIG_PATH = pathlib.Path(__file__).parent / "config.json"
+with open(_CONFIG_PATH, "r", encoding="utf-8") as _f:
+    _config_data = json.load(_f)
+
+MODELS = _config_data["MODELS"]
+G3_THINK = _config_data["G3_THINK"]
+LANG_LEVEL = _config_data["LANG_LEVEL"]
+TAVILY_ADVANCE = _config_data["TAVILY_ADVANCE"]
+
 
 logger = logging.getLogger(__name__)
 
@@ -92,15 +103,15 @@ async def call_remote_agent_async(
     remote_session = await remote_agent.async_create_session(user_id=user_id)
     session_id = remote_session['id']
 
-    if isinstance(agent.MODELS, dict):
+    if isinstance(MODELS, dict):
         # pylint: disable=E1126
-        logger.info("Sub-agents models: %s", agent.MODELS["sub_agents_model"])
-        logger.info("Main agent model: %s", agent.MODELS["main_agent_model"])
+        logger.info("Sub-agents models: %s", MODELS["sub_agents_model"])
+        logger.info("Main agent model: %s", MODELS["main_agent_model"])
     else:
-        logger.info("Agent models: %s", agent.MODELS)
-    logger.info("Language level: %s", agent.LANG_LEVEL)
-    logger.info("Gemini3 thinking level: %s", agent.G3_THINK)
-    logger.info("Tavily advanced extraction: %s", agent.TAVILY_ADVANCE)
+        logger.info("Agent models: %s", MODELS)
+    logger.info("Language level: %s", LANG_LEVEL)
+    logger.info("Gemini3 thinking level: %s", G3_THINK)
+    logger.info("Tavily advanced extraction: %s", TAVILY_ADVANCE)
     logger.info("\n")
 
     logger.info("Session ID: %s", session_id)

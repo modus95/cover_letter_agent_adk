@@ -10,6 +10,8 @@ should be updated (`python3 deploy_vertex.py -m create`)
 """
 
 
+import json
+import pathlib
 from typing import Optional
 
 from google.adk.agents import ParallelAgent, SequentialAgent
@@ -85,16 +87,16 @@ def get_root_agent(models: Optional[str | dict],
     return ra
 
 # -----------------------------------------------------
-# Key parameters for the agent on Vertex AI Agent Engine
+# Load configuration from `config.json`
+_CONFIG_PATH = pathlib.Path(__file__).parent.parent / "config.json"
+with open(_CONFIG_PATH, "r", encoding="utf-8") as _f:
+    _config_data = json.load(_f)
 
-# MODELS = {
-#     "sub_agents_model": "gemini-2.5-flash",
-#     "main_agent_model": "gemini-3-flash-preview"
-#     }
-MODELS = "gemini-2.5-flash"
-G3_THINK = "low"
-LANG_LEVEL = "Upper-Intermediate (B2)"
-TAVILY_ADVANCE = False
+MODELS = _config_data["MODELS"]
+G3_THINK = _config_data["G3_THINK"]
+LANG_LEVEL = _config_data["LANG_LEVEL"]
+TAVILY_ADVANCE = _config_data["TAVILY_ADVANCE"]
+
 
 root_agent = get_root_agent(models=MODELS,
                             g3_thinking_level=G3_THINK,

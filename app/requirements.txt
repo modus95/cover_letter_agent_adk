@@ -1,4 +1,4 @@
-vertexai
+google-cloud-aiplatform==1.128.0
 streamlit==1.51.0
 python-dotenv
 nest_asyncio
