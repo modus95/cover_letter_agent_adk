@@ -19,8 +19,9 @@ The project is organized to support Vertex AI deployment:
 
 ```
 app/
-├── cover_letter_agent/  # Main agent logic and configuration
-│   └── agent.py         # Agent definition and parameter settings
+├── cover_letter_agent/  # Main agent logic
+│   └── agent.py         # Agent definition
+├── config.json          # Key parameters for the agent
 ├── sub_agents/          # Individual specialized agents
 ├── deploy_vertex.py     # Script to deploy and manage the remote agent
 ├── vertex_utils.py      # Utilities for Vertex AI interactions
@@ -133,29 +134,26 @@ python3 app/deploy_vertex.py -m delete_all_sessions
 ```
 
 ## 🚀 Development
-To change key parameters of the remote agent (Model, Thinking Level, Language Proficiency, Tavily settings), you must modify the `app/cover_letter_agent/agent.py` file directly (locate the "Key parameters" section at the bottom of the file):
-```python
-# Key parameters for the agent on Vertex AI Agent Engine
-
-# MODELS can be a string (same model for all) or dict:
-# MODELS = {
-#     "sub_agents_model": "gemini-2.5-flash",
-#     "main_agent_model": "gemini-3-flash-preview"
-# }
-MODELS = "gemini-2.5-flash"
-
-# Thinking level for Gemini 3 models: ["minimal", "low", "medium", "high"]
-G3_THINK = "low"
-
-# Language proficiency level for the generated letter:
-# ["Intermediate (B1)", "Upper-Intermediate (B2)", "Advanced (C1)", "Proficient (C2)"]
-LANG_LEVEL = "Upper-Intermediate (B2)"
-
-# Enable Tavily Advanced Extraction (requires API key)
-TAVILY_ADVANCE = False
+To change key parameters of the remote agent (Model, Thinking Level, Language Proficiency, Tavily settings), you must modify the `app/config.json` file directly:
+```json
+{
+  "MODELS": "gemini-2.5-flash",
+  "G3_THINK": "low",
+  "LANG_LEVEL": "Upper-Intermediate (B2)",
+  "TAVILY_ADVANCE": false
+}
 ```
 
-> ℹ️ After changing any of these values, you **must update the deployment** for the changes to take effect (see **Vertex AI Deployment** section).
+> ℹ️ 
+> `MODELS` can be a string (same model for all) or a JSON object:
+> ```json
+> "MODELS": {
+>     "sub_agents_model": "gemini-2.5-flash",
+>     "main_agent_model": "gemini-3-flash-preview"
+> }
+> ```
+
+> After changing any of these values, you **must update the deployment** (`python3 app/deploy_vertex.py -m create`) for the changes to take effect (see **Vertex AI Deployment** section for more details).
 
 ## 🏃 Usage
 
@@ -171,7 +169,7 @@ The most user-friendly way to interact with the agent. Provides a graphical inte
 ./cl_agent.sh
 ```
 
-> ℹ️ Since this project utilizes a remote agent deployed in Vertex AI, **all agent settings in the UI sidebar are disabled**. See **Development** section for instructions on how to change key parameters of the remote agent.
+> ℹ️ Since this project utilizes a remote agent deployed in Vertex AI, **all agent settings in the UI sidebar are disabled**. See **Development** section for instructions on how to change key parameters of the remote agent in `config.json`.
 
 ### 2. CLI (Command Line Interface)
 
