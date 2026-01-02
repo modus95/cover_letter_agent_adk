@@ -1,0 +1,16 @@
+[project]
+name = "cl-agent"
+version = "0.1.0"
+description = "Cover Letter AI Agent"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "google-adk==1.19.0",
+    "google-cloud-aiplatform==1.128.0",
+    "nest-asyncio>=1.6.0",
+    "pydantic>=2.12.5",
+    "pypdf>=6.5.0",
+    "python-dotenv>=1.2.1",
+    "streamlit==1.51.0",
+    "tavily-python>=0.7.17",
+]
