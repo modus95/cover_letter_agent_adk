@@ -202,11 +202,8 @@ You can also run the Streamlit application using Docker.
 To build the Docker image using the `Dockerfile` and `.dockerignore` files, run the following command from the project root:
 
 ```bash
-docker build -t cl-remote-agent:1 .
+docker build -t cl-remote-agent .
 ```
-
-> ℹ️
-> The version tag (e.g., `:1`) should be incremented each time you update the image to keep track of different builds.
 
 ### Running the Container
 
@@ -223,5 +220,5 @@ docker run --name cl_remote_agent \
 -e USER_ID=<user_id> \
 -e TAVILY_API_KEY=<OUR_TAVILY_API_KEY> \
 -v "$HOME/.config:/root/.config" \
-cl-remote-agent:1
+cl-remote-agent
 ```
