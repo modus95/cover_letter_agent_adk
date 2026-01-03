@@ -142,11 +142,8 @@ You can also run the Streamlit application using Docker.
 To build the Docker image using the `Dockerfile` and `.dockerignore` files, run the following command from the project root:
 
 ```bash
-docker build -t cl-agent-streamlit:1 .
+docker build -t cl-agent-streamlit .
 ```
-
-> [!NOTE]
-> The version tag (e.g., `:1`) should be incremented each time you update the image to keep track of different builds.
 
 ### Running the Container
 
@@ -159,5 +156,5 @@ docker run --name cl-agent \
   -e GOOGLE_API_KEY=<your_google_api_key> \
   -e TAVILY_API_KEY=<your_tavily_api_key> \
   -v "$(pwd)/logs:/cl_agent/logs" \
-  cl-agent-streamlit:1
+  cl-agent-streamlit
 ```

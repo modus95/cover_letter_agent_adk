@@ -1,5 +1,5 @@
 # Use the official Python slim image as base
-FROM python:3.10.12-slim
+FROM python:3.12.3-slim
 
 # Set working directory in the container to the project root
 WORKDIR /cl_agent
@@ -13,8 +13,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements.txt and install Python dependencies
-COPY app/requirements.txt ./app/
-RUN pip3 install --no-cache-dir -r app/requirements.txt
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application code into the app directory
 COPY app/ ./app/
