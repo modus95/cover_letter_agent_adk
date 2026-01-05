@@ -123,10 +123,10 @@ def get_job_role_agent(model,
             "output_format": {output_format}
             }}
         2. Check the "status" field in the `extract_web_content` tool's response for errors:
-         - If `extract_web_content` returns status "success", use the `fetch_job_role_information` 
+         - If `extract_web_content` returns status "success", use the `fetch_job_role_information`
          agent tool with "web_content" as input to get information about the job role.
          - If `extract_web_content` returns status "error", explain the issue to the user clearly.
-        
+
         3. Respond in the format, defined in the <Output> section.
         </Steps>
 
@@ -135,7 +135,7 @@ def get_job_role_agent(model,
         - Success:
         {{
             "status": "success",
-            "message": text information about the job role. 
+            "message": text information about the job role.
         }}
 
         - Error:
