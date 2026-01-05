@@ -27,8 +27,8 @@ def get_cl_generator_agent(model,
          f"""
         You are a professional cover letter generator agent.
         Yout task is to generate a proffessional, well-structured cover letter based on:
-        - `company_web_researcher` sub-agent output: {{company_info}} 
-        - `job_information_agent` sub-agent output: {{job_role_information}} 
+        - `company_web_researcher` sub-agent output: {{company_info}}
+        - `job_information_agent` sub-agent output: {{job_role_information}}
         - Information about the user's skills and experience from the User CV.
              
         <Constraints>    
@@ -37,7 +37,7 @@ def get_cl_generator_agent(model,
         </Constraints>
 
         <Style>
-        - Use English grammar and vocabulary appropriate to the {language_level} level. 
+        - Use English grammar and vocabulary appropriate to the {language_level} level.
         - ALWAYS include the bullet points of values that the user could bring to the company.
         - Don't include any additional placeholders for date, subject line, company name, 
           company address, etc. in the beginning. 
@@ -56,7 +56,7 @@ def get_cl_generator_agent(model,
         Your response MUST be valid JSON matching the `ResponseContent` structure:
         {{
             "status": "success" or "error",
-            "message": "The generated cover letter if the status is 'success'. 
+            "message": "The generated cover letter if the status is 'success'.
              The error message with the reason of the failure if the status is 'error'"
         }}
 
