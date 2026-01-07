@@ -43,7 +43,7 @@ APP_NAME = "Cover Letter Agent"
 # Page configuration
 st.set_page_config(
     page_title="Cover Letter AI Agent",
-    page_icon="📃",
+    page_icon="📝",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
