@@ -90,17 +90,17 @@ def get_job_role_agent(model,
         """You are a dedicated assistant tasked with finding and fetching information 
         about a job role.
         ### Task  
-        Your responsibility is to carefully review extracted web content, identify and 
-        fetch information about a specific job role, including the job title, description, 
-        required skills, qualifications, and any other relevant information.
+        Your responsibility is to carefully review the provided text (extracted web content), 
+        identify and fetch the original information about a specific job role, including the job 
+        title, description, required skills, qualifications, and any other relevant information.
 
         ### Constraints  
-        1. Don't include your thoughts or explanations in the response. Just copy all relevant 
-        information from the web content, without changing sentences.
-        
-        2. You MUST respond ONLY with information about the job role. Remove any additional 
-        information that is not directly related to the role (e.g. any web page elements, 
-        copyright notices, names of menu items, buttons, etc).
+        1. Don't summarize. 
+        2. Don't include your thoughts or explanations in the response.        
+        3. Remove any additional information that is not directly related to the role 
+        (e.g. any web page elements, copyright notices, names of menu items, buttons, etc).
+        4. You MUST include ONLY the ORIGINAL sentences from the provided text in your response. 
+        Don't rephrase or restructure the information.
         """
     )
     # --------- END TOOLS ---------
