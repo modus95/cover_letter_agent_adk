@@ -13,6 +13,54 @@ except ImportError:
     from app.utils import logging_agent_output_status
 
 
+def extract_web_content(url: str,
+                        extract_depth: str,
+                        output_format: str,
+                        ) -> Dict[str, str]:
+    """
+    Extracts web content from a given URL using Tavily's extraction API.
+
+    Args:
+        url: The URL to extract content from.
+        extract_depth: The depth of extraction ('basic' or 'advanced').
+        output_format: The format of the output content ('markdown' or 'text').           
+
+    Returns:
+        Dictionary with status and extracted web content.
+        Success: 
+            {"status": "success",
+            "web_content": "<extracted web content>"}
+        Error:
+            {"status": "error",
+            "error_message": "<error message>"}
+    """
+    # pylint: disable=broad-exception-caught
+
+    tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+
+    try:
+        response = tavily_client.extract(urls=[url],
+                                        extract_depth=extract_depth,
+                                        format=output_format,
+                                        )
+    except Exception as e:
+        return {
+            "status": "error",
+            "error_message": str(e)
+        }
+
+    if response.get("failed_results",[]):
+        return {
+            "status": "error",
+            "error_message": response.get("failed_results")[0].get("error")
+        }
+
+    return {
+            "status": "success",
+            "web_content": response.get("results")[0].get("raw_content")
+        }
+
+
 def get_job_role_agent(model,
                        tavily_advanced_extraction,
                        planner=None) -> LlmAgent:
@@ -28,54 +76,6 @@ def get_job_role_agent(model,
         LlmAgent
     """
     # --------- TOOLS ---------
-
-    def extract_web_content(url: str,
-                            extract_depth: str,
-                            output_format: str,
-                            ) -> Dict[str, str]:
-        """
-        Extracts web content from a given URL using Tavily's extraction API.
-
-        Args:
-            url: The URL to extract content from.
-            extract_depth: The depth of extraction ('basic' or 'advanced').
-            output_format: The format of the output content ('markdown' or 'text').           
-
-        Returns:
-            Dictionary with status and extracted web content.
-            Success: 
-                {"status": "success",
-                "web_content": "<extracted web content>"}
-            Error:
-                {"status": "error",
-                "error_message": "<error message>"}
-        """
-        # pylint: disable=broad-exception-caught
-
-        tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
-
-        try:
-            response = tavily_client.extract(urls=[url],
-                                            extract_depth=extract_depth,
-                                            format=output_format,
-                                            )
-        except Exception as e:
-            return {
-                "status": "error",
-                "error_message": str(e)
-            }
-
-        if response.get("failed_results",[]):
-            return {
-                "status": "error",
-                "error_message": response.get("failed_results")[0].get("error")
-            }
-
-        return {
-                "status": "success",
-                "web_content": response.get("results")[0].get("raw_content")
-            }
-
 
     extract_depth = "advanced" if tavily_advanced_extraction else "basic"
     output_format = "text"

@@ -26,7 +26,7 @@ def get_cl_generator_agent(model,
         instruction=\
         f"""
         You are a professional cover letter generator agent.
-        Yout task is to generate a proffessional, well-structured cover letter based on:
+        Your task is to generate a professional, well-structured cover letter based on:
         - `company_web_researcher` sub-agent output: {{company_info}}
         - `job_information_agent` sub-agent output: {{job_role_information}}
         - Information about the user's skills and experience from the <User CV>.
