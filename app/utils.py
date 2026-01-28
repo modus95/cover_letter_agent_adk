@@ -146,6 +146,8 @@ def st_copy_to_clipboard_button(text: str):
     Args:
         text (str): The text to be copied to the clipboard.
     """
+    # pylint: disable=line-too-long
+
     # Escape the text for JavaScript
     text_js = json.dumps(text)
 
@@ -206,7 +208,7 @@ def st_copy_to_clipboard_button(text: str):
                 navigator.clipboard.writeText(textToCopy).then(() => {{
                     copyIcon.classList.add('d-none');
                     checkIcon.classList.remove('d-none');
-                    
+
                     setTimeout(() => {{
                         checkIcon.classList.add('d-none');
                         copyIcon.classList.remove('d-none');
@@ -220,4 +222,3 @@ def st_copy_to_clipboard_button(text: str):
     </html>
     """
     components.html(html_code, height=40)
-    
