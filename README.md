@@ -18,15 +18,20 @@ An intelligent agentic workflow designed to generate tailored, professional cove
 The project is organized to support Vertex AI deployment:
 
 ```
-app/
-├── cover_letter_agent/  # Main agent logic
-│   └── agent.py         # Agent definition
-├── config.json          # Key parameters for the agent
-├── sub_agents/          # Individual specialized agents
-├── deploy_vertex.py     # Script to deploy and manage the remote agent
-├── vertex_utils.py      # Utilities for Vertex AI interactions
+.
+├── cl_agent_uv.sh       # Script to run the application (Local/Remote)
 ├── requirements.txt     # Python dependencies
-└── .env_remote          # Configuration for remote deployment
+├── app/
+│   ├── cover_letter_agent/  # Main agent logic
+│   ├── sub_agents/          # Individual specialized agents
+│   ├── config.json          # Key parameters for the agent
+│   ├── deploy_vertex.py     # Script to deploy and manage the remote agent
+│   ├── main_vertex.py       # CLI entry point for vertex agent
+│   ├── streamlit_vrtx.py    # Streamlit app for remote agent
+│   ├── ui.py                # UI components
+│   ├── utils.py             # Utility functions
+│   ├── vertex_utils.py      # Utilities for Vertex AI interactions
+│   └── .env_remote          # Configuration for remote deployment
 ```
 
 ## 🛠️ Architecture
@@ -44,6 +49,7 @@ The system is built using a **Sequential Agent** that orchestrates a **Parallel 
 ## 📦 Requirements
 
 - Python 3.10+
+- `uv` (for script execution)
 - `google-cloud-aiplatform==1.128.0`
 - `streamlit==1.51.0`
 - `python-dotenv`
@@ -66,11 +72,16 @@ In order to deploy the ADK agent to production using Vertex AI Agent Engine, you
 
 ## 🔧 Configuration
 1.  Clone the repository (`deploy_gcp` branch).
-2.  Install dependencies:
+2.  Ensure `uv` is installed on your system.
+3.  Install dependencies:
     ```bash
-    pip install -r app/requirements.txt
+    pip install -r requirements.txt
     ```
-3.  Create a `.env_remote` file in the `app/` directory and add your prerequisites:
+    *Or if using uv for environment management:*
+    ```bash
+    uv pip install -r requirements.txt
+    ```
+4.  Create a `.env_remote` file in the `app/` directory and add your prerequisites:
     ```env
     GOOGLE_GENAI_USE_VERTEXAI=True
     GOOGLE_CLOUD_PROJECT=<project_id>
@@ -96,17 +107,17 @@ Use `deploy_vertex.py` to create, update, or delete your agent deployment.
 **Deploy / Update Agent:**
 After changing code or `agent.py` configuration, run this to update the remote agent.
 ```bash
-python3 app/deploy_vertex.py -m create
+uv run app/deploy_vertex.py -m create
 ```
 
 **List Deployments:**
 ```bash
-python3 app/deploy_vertex.py -m list
+uv run app/deploy_vertex.py -m list
 ```
 
 **Delete Deployment:**
 ```bash
-python3 app/deploy_vertex.py -m delete -i <RESOURCE_ID>
+uv run app/deploy_vertex.py -m delete -i <RESOURCE_ID>
 ```
 
 ### 3. Manage Sessions
@@ -115,22 +126,22 @@ You can create and manage remote sessions for testing or interaction.
 
 **Create Session:**
 ```bash
-python3 app/deploy_vertex.py -m create_session
+uv run app/deploy_vertex.py -m create_session
 ```
 
 **List Sessions:**
 ```bash
-python3 app/deploy_vertex.py -m list_sessions
+uv run app/deploy_vertex.py -m list_sessions
 ```
 
 **Delete Specific Session:**
 ```bash
-python3 app/deploy_vertex.py -m delete_session -i <SESSION_ID>
+uv run app/deploy_vertex.py -m delete_session -i <SESSION_ID>
 ```
 
 **Delete All Sessions:**
 ```bash
-python3 app/deploy_vertex.py -m delete_all_sessions
+uv run app/deploy_vertex.py -m delete_all_sessions
 ```
 
 ## 🚀 Development
@@ -153,7 +164,7 @@ To change key parameters of the remote agent (Model, Thinking Level, Language Pr
 > }
 > ```
 
-> After changing any of these values, you **must update the deployment** (`python3 app/deploy_vertex.py -m create`) for the changes to take effect (see **Vertex AI Deployment** section for more details).
+> After changing any of these values, you **must update the deployment** (`uv run app/deploy_vertex.py -m create`) for the changes to take effect (see **Vertex AI Deployment** section for more details).
 
 ## 🏃 Usage
 
@@ -166,7 +177,7 @@ The most user-friendly way to interact with the agent. Provides a graphical inte
 ![Cover Letter Agent UI](screenshots/web_ui.png)
 
 ```bash
-./cl_agent.sh
+./cl_agent_uv.sh --remote
 ```
 
 > ℹ️ Since this project utilizes a remote agent deployed in Vertex AI, **all agent settings in the UI sidebar are disabled**. See **Development** section for instructions on how to change key parameters of the remote agent in `config.json`.
@@ -176,7 +187,7 @@ The most user-friendly way to interact with the agent. Provides a graphical inte
 Run the agent directly from the terminal using `app/main_vertex.py`. This method is useful for quick tests or automation.
 
 ```bash
-python app/main_vertex.py -f path/to/your_cv.pdf
+uv run app/main_vertex.py -f path/to/your_cv.pdf
 ```
 
 #### Arguments
