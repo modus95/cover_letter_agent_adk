@@ -19,19 +19,22 @@ The project is organized to support Vertex AI deployment:
 
 ```
 .
-├── cl_agent_uv.sh       # Script to run the application (Local/Remote)
-├── requirements.txt     # Python dependencies
+├── cl_agent_uv.sh             # Script to run the application (Local/Remote)
+├── requirements.txt           # Python dependencies
 ├── app/
-│   ├── cover_letter_agent/  # Main agent logic
-│   ├── sub_agents/          # Individual specialized agents
-│   ├── config.json          # Key parameters for the agent
-│   ├── deploy_vertex.py     # Script to deploy and manage the remote agent
-│   ├── main_vertex.py       # CLI entry point for vertex agent
-│   ├── streamlit_vrtx.py    # Streamlit app for remote agent
-│   ├── ui.py                # UI components
-│   ├── utils.py             # Utility functions
-│   ├── vertex_utils.py      # Utilities for Vertex AI interactions
-│   └── .env_remote          # Configuration for remote deployment
+│   ├── cover_letter_agent/    # Main agent logic
+│   ├── sub_agents/            # Specialized sub-agents
+│   |    ├── cl_generator/     # Cover letter generation logic
+│   |    ├── job_info/         # Job description parsing logic
+│   |    └── web_researcher/   # Web research logic
+│   ├── config.json            # Key parameters for the agent
+│   ├── deploy_vertex.py       # Script to deploy and manage the remote agent
+│   ├── main_vertex.py         # CLI entry point for vertex agent
+│   ├── streamlit_vrtx.py      # Streamlit app for remote agent
+│   ├── ui.py                  # Streamlit UI components
+│   ├── utils.py               # Shared utility functions
+│   ├── vertex_utils.py        # Utilities for Vertex AI interactions
+│   └── .env_remote            # Configuration for remote deployment
 ```
 
 ## 🛠️ Architecture
@@ -48,8 +51,8 @@ The system is built using a **Sequential Agent** that orchestrates a **Parallel 
 
 ## 📦 Requirements
 
-- Python 3.10+
-- `uv` (for script execution)
+- `Python >=3.12`
+- `uv` (Fast Python package installer and resolver)
 - `google-cloud-aiplatform==1.128.0`
 - `streamlit==1.51.0`
 - `python-dotenv`
@@ -176,6 +179,10 @@ The most user-friendly way to interact with the agent. Provides a graphical inte
 
 ![Cover Letter Agent UI](screenshots/web_ui.png)
 
+```bash
+uv run streamlit run app/streamlit_vrtx.py
+```
+Alternatively, you can use the provided helper script:
 ```bash
 ./cl_agent_uv.sh --remote
 ```
