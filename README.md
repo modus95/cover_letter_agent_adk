@@ -18,12 +18,17 @@ The project code is organized within the `app/` directory:
 
 ```
 app/
-├── cover_letter_agent/  # Main agent logic and orchestration
-├── sub_agents/          # Individual specialized agents (researcher, job info extractor, etc.)
-├── main.py              # CLI entry point for local execution
-├── streamlit_app.py     # Streamlit web application
-├── utils.py             # Utility functions
-└── .env                 # Configuration file
+├── cover_letter_agent/    # Main agent orchestration
+├── sub_agents/            # Specialized sub-agents
+│   ├── cl_generator/      # Cover letter generation logic
+│   ├── job_info/          # Job description parsing logic
+│   └── web_researcher/    # Web research logic
+├── main.py                # CLI entry point
+├── streamlit_app.py       # Main Streamlit web application
+├── ui.py                  # Streamlit UI components
+├── style.css              # Custom styling for Streamlit
+├── utils.py               # Shared utility functions
+└── .env                   # Configuration file
 ```
 
 ## 🛠️ Architecture
@@ -47,10 +52,11 @@ To help monitor the process, the outputs of all sub-agents are logged in the `lo
 
 ## 📦 Requirements
 
-- `Python >=3.10`
+- `Python >=3.12`
+- `uv` (Fast Python package installer and resolver)
 - `google-adk`
 - `google-cloud-aiplatform`
-- `streamlit==1.51.0`
+- `streamlit`
 - `python-dotenv`
 - `tavily-python`
 - `nest_asyncio`
@@ -63,6 +69,11 @@ To help monitor the process, the outputs of all sub-agents are logged in the `lo
 
 1.  Clone the repository.
 2.  Install dependencies:
+    Using `uv` (recommended):
+    ```bash
+    uv sync
+    ```
+    Using `pip`:
     ```bash
     pip install -r app/requirements.txt
     ```
@@ -84,7 +95,12 @@ The most user-friendly way to interact with the agent. Provides a graphical inte
 ![Cover Letter Agent UI](ui_screenshot.png)
 
 ```bash
-streamlit run app/streamlit_app.py
+uv run streamlit run app/streamlit_app.py
+```
+
+Alternatively, you can use the provided helper script:
+```bash
+./cl_agent_uv.sh
 ```
 
 **Features:**
@@ -101,7 +117,7 @@ streamlit run app/streamlit_app.py
 Run the agent directly from the terminal using `app/main.py`. This method is useful for quick tests or automation.
 
 ```bash
-python app/main.py -f path/to/your_cv.pdf [options]
+uv run python app/main.py -f path/to/your_cv.pdf [options]
 ```
 
 #### Arguments
@@ -119,7 +135,7 @@ python app/main.py -f path/to/your_cv.pdf [options]
 #### Example
 
 ```bash
-python app/main.py -f ./my_cv.pdf --verbose --tavily --ma_model gemini-3-pro-preview
+uv run python app/main.py -f ./my_cv.pdf --verbose --tavily --ma_model gemini-3-pro-preview
 ```
 
 *Note: You will be prompted to enter the Company URL and Job Description URL after the script starts if they are not set in environment variables.*
