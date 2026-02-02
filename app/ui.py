@@ -11,8 +11,8 @@ import streamlit as st
 from utils import AgentSettings
 
 
-def setup_page():
-    """Configures the page, loads CSS, and renders the sidebar widgets."""
+def setup_page() -> None:
+    """Configures the page, loads CSS."""
     st.set_page_config(
         page_title="Cover Letter AI Agent",
         page_icon="📝",
@@ -36,7 +36,12 @@ def setup_page():
     </style>
     """)
 
-    # ----- SIDE BAR -----
+    return None
+
+
+def render_sidebar() -> AgentSettings:
+    """Renders the sidebar widgets and returns the agent settings."""
+
     gemini_expander = st.sidebar.expander(":blue[**Gemini model**]", expanded=False)
     language_level_expander = st.sidebar.expander(":blue[**Language level**]", expanded=False)
     tavily_expander = st.sidebar.expander(":blue[**Tavily Extractor settings**]", expanded=False)
@@ -52,7 +57,7 @@ def setup_page():
                             "Main agent model",
                             options=["gemini-2.5-flash-preview-09-2025",
                                     "gemini-3-flash-preview"],
-                            index=0
+                            index=1
                         )
     }
 
@@ -60,7 +65,7 @@ def setup_page():
     g3_thinking_level = gemini_expander.selectbox(
                             "Gemini3 thinking level",
                             options=["minimal", "low", "medium", "high"],
-                            index=0,
+                            index=1,
                             help=("The `minimal`/`low` thinking level is preferred "
                                   "for cover letter generation"),
                             disabled=g3_tl_disabled  # enable if any of the models is Gemini3
@@ -78,7 +83,7 @@ def setup_page():
     )
 
     tavily_advanced_extraction = tavily_expander.toggle(
-        "Advanced extraction", value=False,
+        "Advanced extraction", value=True,
         help="Enable if there is an issue with extracting the job description"
     )
 

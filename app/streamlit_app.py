@@ -72,7 +72,8 @@ async def run_agent(
 def main():
     """Main entry point for the Streamlit app."""
 
-    agent_settings, logging = ui.setup_page()
+    ui.setup_page()
+    agent_settings, logging = ui.render_sidebar()
     left, right, company_url, job_description_url, uploaded_file = ui.render_main_inputs()
     generate_clicked = ui.render_generate_button(left, st.session_state.generating)
 
