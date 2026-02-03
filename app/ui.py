@@ -157,6 +157,15 @@ def render_warning(container, message):
     container.warning(message)
 
 
+def render_page_link(container, page_name, link_text):
+    """Renders a link to the logs viewer."""
+    container.html(f'''
+        <a href="{page_name}" target="_blank"
+        style="font-size: 0.9rem; font-style: italic;"
+        >{link_text}</a>
+    ''')
+
+
 def render_success(left, right, agent_result, copy_callback):
     """Renders the success message and result."""
     # Add invisible status marker for CSS targeting
