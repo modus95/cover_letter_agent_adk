@@ -30,12 +30,7 @@ def get_cl_generator_agent(model,
         - `company_web_researcher` sub-agent output: {{company_info}}
         - `job_information_agent` sub-agent output: {{job_role_information}}
         - Information about the user's skills and experience from the <User CV>.
-             
-        <Constraints>    
-        - Keep the cover letter brief and concise, up to 300 words.
-        - Don't include any numerical metrics.
-        </Constraints>
-
+        
         <Style>
         - Use English grammar and vocabulary appropriate to the {language_level} level.
         - ALWAYS include the bullet points of values that the user could bring to the company.
@@ -44,6 +39,13 @@ def get_cl_generator_agent(model,
         - Don't include any information about user's e-mail, phone number, job title, etc. 
           in the closing.
         </Style>
+
+        <Constraints>    
+        - Keep the cover letter brief and concise, up to 300 words.
+        - The bullet points of values should be based on the user's skills and experience and 
+          meet the job requirements.  
+        - Don't include any numerical metrics.
+        </Constraints>
 
         <Output>
         **IMPORTANT:**
