@@ -25,6 +25,8 @@ app/
 │   └── web_researcher/    # Web research logic
 ├── main.py                # CLI entry point
 ├── streamlit_app.py       # Main Streamlit web application
+├── pages/                 # Additional Streamlit pages
+│   └── logs_viewer.py     # Logs monitoring interface
 ├── ui.py                  # Streamlit UI components
 ├── style.css              # Custom styling for Streamlit
 ├── utils.py               # Shared utility functions
@@ -45,8 +47,9 @@ The system is built using a **Sequential Agent** that orchestrates a **Parallel 
 
 ## 📊 Logging
 
-To help monitor the process, the outputs of all sub-agents are logged in the `logs/` folder.
+To help monitor the process, the outputs of all sub-agents are logged in the `logs/` folder. These can be viewed directly within the Streamlit application or via the raw log files.
 
+- **Logs Viewer**: Access the **"subagent logs"** link in the Streamlit UI to view agent activities and reasoning in real-time.
 - **File Name**: `sub_agents_output_<company_domain>.log`
 - **Utility**: These logs are useful for reviewing the information discovered and extracted about the company and the specific job role.
 
@@ -109,6 +112,7 @@ Alternatively, you can use the provided helper script:
 - **Gemini3 Thinking Level** configuration (minimal, low, medium, high).
 - Toggle for **Tavily Advanced Extraction**.
 - Real-time status updates.
+- **Built-in Logs Viewer**: Dedicated page to monitor sub-agent reasoning and research data.
 - **Logging Toggle**: Controls the console logging level. When enabled, verbose log information about the agent's workflow is printed out in the console (DEBUG mode).
 - Copy-to-clipboard functionality for the generated letter.
 
