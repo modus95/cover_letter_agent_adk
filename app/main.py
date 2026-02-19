@@ -97,11 +97,11 @@ if __name__ == "__main__":
                         help="Enable verbose logging")
     parser.add_argument("-t", "--tavily", default=False, action='store_true',
                         help="Enable tavily advanced extraction")
-    parser.add_argument("-l", "--language_level", type=str, default="b2",
+    parser.add_argument("-l", "--language_level", type=str, default="b1",
                         choices=["b1", "b2", "c1", "c2"], help="Language level")
     parser.add_argument("-T", "--thinking_level", type=str, default="minimal",
                         choices=["minimal", "low", "medium", "high"], help="Gemini3 thinking level")
-    parser.add_argument("-m", "--sa_model", type=str, default="gemini-2.5-flash-preview-09-2025",
+    parser.add_argument("-m", "--sa_model", type=str, default="gemini-2.5-flash",
                         help="Sub-agents model name")
     parser.add_argument("-M", "--ma_model", type=str, default="gemini-3-flash-preview",
                         help="Main agent model name")

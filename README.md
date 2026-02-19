@@ -104,7 +104,7 @@ Alternatively, you can use the provided helper script:
 ```
 
 **Features:**
-- Sidebar for selecting **Sub-agents model** and **Main agent model** (e.g., `gemini-2.5-flash-preview`).
+- Sidebar for selecting **Sub-agents model** and **Main agent model** (e.g., `gemini-2.5-flash`).
 - **Language Level** selection (Intermediate B1 to Proficient C2).
 - **Gemini3 Thinking Level** configuration (minimal, low, medium, high).
 - Toggle for **Tavily Advanced Extraction**.
@@ -127,9 +127,9 @@ uv run python app/main.py -f path/to/your_cv.pdf [options]
 | `-f` | `--file_name` | **Required** | Path to the PDF CV file. |
 | `-v` | `--verbose` | `False` | Enable verbose logging to see detailed agent thoughts/actions. |
 | `-t` | `--tavily` | `False` | Enable Tavily advanced extraction for web research. |
-| `-l` | `--language_level` | `b2` | Language proficiency level (b1, b2, c1, c2). |
+| `-l` | `--language_level` | `b1` | Language proficiency level (b1, b2, c1, c2). |
 | `-T` | `--thinking_level` | `minimal` | Gemini 3.0 thinking level (minimal, low, medium, high). |
-| `-m` | `--sa_model` | `gemini-2.5-flash-preview-09-2025` | Model name used by sub-agents (researcher, job info extractor, etc.). |
+| `-m` | `--sa_model` | `gemini-2.5-flash` | Model name used by sub-agents (researcher, job info extractor, etc.). |
 | `-M` | `--ma_model` | `gemini-3-flash-preview` | Model name used by the main agent for final generation. |
 
 #### Example

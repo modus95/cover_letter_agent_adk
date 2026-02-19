@@ -84,8 +84,8 @@ def get_root_agent(agent_settings: AgentSettings):
 
 root_agent = get_root_agent(
     AgentSettings(
-        models="gemini-2.5-flash-preview-09-2025",
-        language_level="Upper-Intermediate (B2)",
+        models="gemini-2.5-flash",
+        language_level="Intermediate (B1)",
         g3_thinking_level="minimal",
         tavily_advanced_extraction=False
         )

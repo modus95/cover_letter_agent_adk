@@ -49,13 +49,13 @@ def render_sidebar() -> AgentSettings:
     models = {
         "sub_agents_model": gemini_expander.selectbox(
                             "Sub-agents model",
-                            options=["gemini-2.5-flash-preview-09-2025",
+                            options=["gemini-2.5-flash",
                                     "gemini-3-flash-preview"],
                             index=0
                         ),
         "main_agent_model": gemini_expander.selectbox(
                             "Main agent model",
-                            options=["gemini-2.5-flash-preview-09-2025",
+                            options=["gemini-2.5-flash",
                                     "gemini-3-flash-preview"],
                             index=1
                         )
@@ -78,7 +78,7 @@ def render_sidebar() -> AgentSettings:
                  "Advanced (C1)",
                  "Proficient (C2)",
                 ],
-        index=1,
+        index=0,
         label_visibility="collapsed"
     )
 
