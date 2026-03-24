@@ -6,6 +6,7 @@ for cover letter generation.
 """
 
 from google.adk.agents import LlmAgent
+from google.genai import types
 
 try:
     from utils import ResponseContent
@@ -15,13 +16,15 @@ except ImportError:
 
 def get_cl_generator_agent(model,
                            language_level,
-                           planner=None) -> LlmAgent:
+                           planner=None,
+                           top_p: float = None) -> LlmAgent:
     """Get cover letter generator agent."""
 
     return LlmAgent(
         name="cl_generator_agent",
         model=model,
         planner=planner,
+        generate_content_config=types.GenerateContentConfig(top_p=top_p),
         description="Agent to generate a cover letter based on provided information",
         instruction=\
         f"""

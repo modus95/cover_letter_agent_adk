@@ -47,6 +47,7 @@ def get_root_agent(agent_settings: AgentSettings):
         status_logger.info("Main agent thinking level: %s",
                            ma_planner.thinking_config.thinking_level)
 
+    status_logger.info("Top P: %s", agent_settings.top_p)
     status_logger.info("Language level: %s", agent_settings.language_level)
     status_logger.info("Gemini3 thinking level: %s", agent_settings.g3_thinking_level)
 
@@ -60,7 +61,8 @@ def get_root_agent(agent_settings: AgentSettings):
 
     cl_generator_agent = clg.get_cl_generator_agent(ma_model,
                                                     agent_settings.language_level,
-                                                    ma_planner
+                                                    ma_planner,
+                                                    top_p=agent_settings.top_p
                                                     )
 
     # The ParallelAgent runs all its sub-agents simultaneously.
@@ -86,6 +88,7 @@ root_agent = get_root_agent(
     AgentSettings(
         models="gemini-2.5-flash",
         language_level="Intermediate (B1)",
+        top_p=0.95,
         g3_thinking_level="minimal",
         tavily_advanced_extraction=False
         )

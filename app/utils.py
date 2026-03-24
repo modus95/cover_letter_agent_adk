@@ -61,11 +61,13 @@ class AgentSettings:
         models (Optional[str | dict]): The name of the model or a dictionary 
         specifying different models for sub-agents and the main agent.
         g3_thinking_level (str): The thinking level of Gemini3 to use.
+        top_p (float): The top-p parameter (0.0-1.0) controls the diversity of the generated text.
         language_level (str): The language level (B1-C2) to use.
         tavily_advanced_extraction (bool): Whether to use Tavily advanced extraction.
     """
     models: Optional[str | dict]
     g3_thinking_level: str
+    top_p: float
     language_level: str
     tavily_advanced_extraction: bool
 
