@@ -17,11 +17,11 @@ from pydantic import BaseModel, Field
 import pypdf
 import streamlit.components.v1 as components
 
-from google.adk.runners import Runner
 from google.genai import types
 from google.adk.models.google_llm import Gemini
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.planners.built_in_planner import BuiltInPlanner
+from google.adk.runners import Runner
 
 
 RETRY_CONFIG = types.HttpRetryOptions(
@@ -74,12 +74,11 @@ class AgentSettings:
 
 def load_json(data):
     """Extract and load JSON from a string."""
-    try:
-        pat = r'\{[^{}]*(?:{[^{}]*}[^{}]*)*\}'
-        return json.loads(re.search(pat, data).group(0))
-
-    except json.JSONDecodeError:
-        return {}
+    pat = r'\{[^{}]*(?:{[^{}]*}[^{}]*)*\}'
+    json_str = re.search(pat, data).group(0)
+    # Remove invalid escaped single quotes that might be left by the LLM
+    json_str = json_str.replace("\\'", "'")
+    return json.loads(json_str)
 
 
 def logging_agent_output_status(callback_context: CallbackContext) -> None:
@@ -108,13 +107,13 @@ def logging_agent_output_status(callback_context: CallbackContext) -> None:
     current_state = callback_context.state
     agent_name = callback_context.agent_name
     agent_output_key = output_keys[agent_name]
-    output_dict = current_state.get(agent_output_key)
-    if isinstance(output_dict, str):
-        output_dict = load_json(output_dict)
-
     log_title = " ".join(agent_output_key.split("_")).upper()
 
     try:
+        output_dict = current_state.get(agent_output_key)
+        if isinstance(output_dict, str):
+            output_dict = load_json(output_dict)
+
         status = output_dict.get("status")
         message = output_dict.get("message")
 
@@ -128,8 +127,11 @@ def logging_agent_output_status(callback_context: CallbackContext) -> None:
                        f"{log_title} / (Raw Output)",
                        json.dumps(output_dict, indent=4),
                        str(err))
-
-    return None
+    except json.JSONDecodeError as err:
+        output_logging(status_logger,
+                       f"{log_title} / ERROR",
+                       output_dict,
+                       str(err))
 
 
 def define_model(model_name:str) -> Gemini:
