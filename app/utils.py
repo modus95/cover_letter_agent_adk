@@ -117,7 +117,7 @@ async def call_remote_agent_async(
     logger.info("Session ID: %s", session_id)
     logger.info(
         "See the session details in Vertex AI:\n"
-        "https://console.cloud.google.com/vertex-ai/agents/locations/%s/"
+        "https://console.cloud.google.com/vertex-ai/agents/agent-engines/locations/%s/"
         "agent-engines/%s/playground?session=%s&project=%s", 
         remote_agent.location, remote_agent.name, session_id, project_id)
 
