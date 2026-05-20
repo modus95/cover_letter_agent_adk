@@ -15,9 +15,8 @@ from contextlib import suppress
 from pydantic import BaseModel, Field
 
 import pypdf
-import streamlit.components.v1 as components
 
-from google.genai import types
+from google.genai import Client, types
 from google.adk.models.google_llm import Gemini
 from google.adk.agents.callback_context import CallbackContext
 from google.adk.planners.built_in_planner import BuiltInPlanner
@@ -58,7 +57,7 @@ class AgentSettings:
     Represents the settings for an agent.
 
     Attributes:
-        models (Optional[str | dict]): The name of the model or a dictionary 
+        models (Optional[str | dict]): The name of the model or a dictionary
         specifying different models for sub-agents and the main agent.
         g3_thinking_level (str): The thinking level of Gemini3 to use.
         top_p (float): The top-p parameter (0.0-1.0) controls the diversity of the generated text.
@@ -134,6 +133,31 @@ def logging_agent_output_status(callback_context: CallbackContext) -> None:
                        str(err))
 
 
+def get_client() -> Client:
+    """Initializes and returns Google GenAI Client instance"""
+
+    api_key = os.environ.get("GOOGLE_API_KEY")
+    if not api_key:
+        raise ValueError("GOOGLE_API_KEY environment variable is not set.")
+    return Client(api_key=api_key)
+
+
+def get_gemini_model_list() -> list:
+    """Return available text Gemini models."""
+    models_pat = re.compile(
+        r"models\/(gemini-(?!.*(?:audio|image|live|tts))[\d.]+-(?:flash|pro)(?:-[a-z0-9\-]*)?$)"
+    )
+    client = get_client()
+    models = []
+
+    for listed_model in client.models.list():
+        result = models_pat.search(listed_model.name)
+        if result:
+            models.append(result.group(1))
+
+    return models[::-1]  # Reverse to show the latest models first
+
+
 def define_model(model_name:str) -> Gemini:
     """
     Initializes and returns a Gemini model instance.
@@ -151,29 +175,24 @@ def define_model(model_name:str) -> Gemini:
 
 def get_planner(md: Gemini, thinking_level: str) -> Optional[BuiltInPlanner]:
     """
-    Determines and returns a BuiltInPlanner based on the model version.
+    Create a built-in planner with model-appropriate thinking configuration.
 
-    If the model version (extracted from `md.model`) is 3 or greater,
-    it returns a BuiltInPlanner configured with a low thinking level.
-    Otherwise, it returns None.
+    For Gemini versions earlier than 3, this uses a fixed `thinking_budget=2048`.
+    For Gemini 3+ models, this uses the provided `thinking_level`.
 
     Args:
-        md: An object containing model information, expected to have a 'model'
-            attribute (e.g., `md.model = "gemini-3.0-flash"`).
-        thinking_level: The thinking level to use for the planner 
-        ("minimal", "low", "medium", "high").
+        md (Gemini): Configured Gemini model instance.
+        thinking_level (str): Thinking level to apply for Gemini 3+ models.
 
     Returns:
-        An instance of BuiltInPlanner if the model version is 3 or higher,
-        otherwise None.
+        Optional[BuiltInPlanner]: Planner configured for the given model version.
     """
     version = float(md.model.split("-")[1])
-    if version >= 3 and thinking_level in ["minimal", "low", "medium", "high"]:
-        return BuiltInPlanner(
-            thinking_config=types.ThinkingConfig(thinking_level=thinking_level)
+    thinking_config = (
+        types.ThinkingConfig(thinking_budget=2048) if version < 3
+            else types.ThinkingConfig(thinking_level=thinking_level)
         )
-
-    return None
+    return BuiltInPlanner(thinking_config=thinking_config)
 
 
 def save_uploaded_file(uploaded_file):
@@ -236,7 +255,7 @@ def output_logging(logg: logging.Logger,
         logg (logging.Logger): The logger instance to use for output.
         ttl (str): The title or header string for the log output.
         info_str (str): The main information string to be logged.
-        warning (Optional[str]): An optional warning message. 
+        warning (Optional[str]): An optional warning message.
             If provided, it will be logged as a warning.
     """
     logg.info(ttl)
@@ -295,7 +314,7 @@ def setup_loggers(logfile_name: str):
 
 def get_domain(url: str) -> str:
     """
-    Extracts the domain name from a URL.    
+    Extracts the domain name from a URL.
     Example: "https://www.google.com/search" -> "google"
     """
     if not url.startswith(('http://', 'https://')):
@@ -377,88 +396,3 @@ async def call_agent_async(
             await agen.close()
 
     return final_response_text
-
-
-def st_copy_to_clipboard_button(text: str):
-    """
-    Displays a copy-to-clipboard button using a custom HTML component.
-    
-    Args:
-        text (str): The text to be copied to the clipboard.
-    """
-    # pylint: disable=line-too-long
-
-    # Escape the text for JavaScript
-    text_js = json.dumps(text)
-
-    html_code = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            .zeroclipboard-container {{
-                display: flex;
-                justify-content: flex-start; /* Align to left to match potential layout, or center */
-                align-items: center;
-            }}
-            .ClipboardButton {{
-                background-color: transparent;
-                border: none;
-                cursor: pointer;
-                padding: 4px;
-                border-radius: 6px;
-                color: #57606a;
-                transition: background-color 0.2s;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }}
-            .ClipboardButton:hover {{
-                background-color: rgba(0,0,0,0.05);
-                color: #0969da;
-            }}
-            .d-none {{
-                display: none !important;
-            }}
-            .color-fg-success {{
-                color: #1a7f37 !important;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="zeroclipboard-container">
-            <button aria-label="Copy" class="ClipboardButton" id="copy-button">
-                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="octicon octicon-copy js-clipboard-copy-icon" id="copy-icon">
-                    <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"></path>
-                    <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"></path>
-                </svg>
-                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="octicon octicon-check js-clipboard-check-icon color-fg-success d-none" id="check-icon">
-                    <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path>
-                </svg>
-            </button>
-        </div>
-
-        <script>
-            const button = document.getElementById('copy-button');
-            const copyIcon = document.getElementById('copy-icon');
-            const checkIcon = document.getElementById('check-icon');
-            const textToCopy = {text_js};
-
-            button.addEventListener('click', () => {{
-                navigator.clipboard.writeText(textToCopy).then(() => {{
-                    copyIcon.classList.add('d-none');
-                    checkIcon.classList.remove('d-none');
-
-                    setTimeout(() => {{
-                        checkIcon.classList.add('d-none');
-                        copyIcon.classList.remove('d-none');
-                    }}, 2000);
-                }}).catch(err => {{
-                    console.error('Failed to copy text: ', err);
-                }});
-            }});
-        </script>
-    </body>
-    </html>
-    """
-    components.html(html_code, height=40)

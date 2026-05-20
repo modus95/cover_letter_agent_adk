@@ -140,8 +140,7 @@ def main():
 
         if agent_result.get("status", "") == "success":
             ui.render_success(left, right,
-                              agent_result,
-                              utils.st_copy_to_clipboard_button)
+                              agent_result)
 
         if (not agent_result or
             agent_result.get("status", "") == "error"):

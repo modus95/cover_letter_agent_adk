@@ -7,3 +7,5 @@ __pycache__
 *.ipynb
 logs
 agent_docker.sh
+
+test_models.py

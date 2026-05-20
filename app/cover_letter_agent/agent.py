@@ -38,14 +38,20 @@ def get_root_agent(agent_settings: AgentSettings):
 
     # Logging the models, planners, and language level
     status_logger.info("Sub-agents models: %s", sa_model.model)
-    if sa_planner:
+    if getattr(sa_planner.thinking_config, "thinking_level", None):
         status_logger.info("Sub-agents thinking level: %s",
-                           sa_planner.thinking_config.thinking_level)
+                            sa_planner.thinking_config.thinking_level)
+    else:
+        status_logger.info("Sub-agents thinking budget: %s",
+                            sa_planner.thinking_config.thinking_budget )
 
     status_logger.info("Main agent model: %s", ma_model.model)
-    if ma_planner:
+    if getattr(ma_planner.thinking_config, "thinking_level", None):
         status_logger.info("Main agent thinking level: %s",
                            ma_planner.thinking_config.thinking_level)
+    else:
+        status_logger.info("Main agent thinking budget: %s",
+                            ma_planner.thinking_config.thinking_budget)
 
     status_logger.info("Top P: %s", agent_settings.top_p)
     status_logger.info("Language level: %s", agent_settings.language_level)
