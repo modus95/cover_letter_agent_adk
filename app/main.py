@@ -95,22 +95,13 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--file_name", type=str, required=True, help="Path to the PDF file")
     parser.add_argument("-v", "--verbose", default=False, action='store_true',
                         help="Enable verbose logging")
-    parser.add_argument("-t", "--tavily", default=False, action='store_true',
-                        help="Enable tavily advanced extraction")
     parser.add_argument("-l", "--language_level", type=str, default="b1",
                         choices=["b1", "b2", "c1", "c2"], help="Language level")
     parser.add_argument("-T", "--thinking_level", type=str, default="minimal",
                         choices=["minimal", "low", "medium", "high"], help="Gemini3 thinking level")
-    parser.add_argument("-m", "--sa_model", type=str, default="gemini-2.5-flash",
-                        help="Sub-agents model name")
-    parser.add_argument("-M", "--ma_model", type=str, default="gemini-3-flash-preview",
+    parser.add_argument("-m", "--model", type=str, default="gemini-3.1-flash-lite-preview",
                         help="Main agent model name")
     args = parser.parse_args()
-
-    models = {
-        "sub_agents_model": args.sa_model,
-        "main_agent_model": args.ma_model
-        }
 
     language_levels = {
         "b1": "Intermediate (B1)",
@@ -120,10 +111,10 @@ if __name__ == "__main__":
         }
 
     agent_settings = AgentSettings(
-                    models=models,
+                    model=args.model,
                     g3_thinking_level=args.thinking_level,
                     language_level=language_levels[args.language_level],
-                    tavily_advanced_extraction=args.tavily
+                    top_p=0.95
                 )
 
     # Set up and run the asynchronous main function using an event loop

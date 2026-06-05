@@ -44,22 +44,14 @@ def render_sidebar() -> AgentSettings:
 
     gemini_expander = st.sidebar.expander(":blue[**Gemini model**]", expanded=False)
     language_level_expander = st.sidebar.expander(":blue[**Language level**]", expanded=False)
-    tavily_expander = st.sidebar.expander(":blue[**Tavily Extractor settings**]", expanded=False)
 
     available_models = get_gemini_model_list()
 
-    models = {
-        "sub_agents_model": gemini_expander.selectbox(
-                            "Sub-agents model",
+    model = gemini_expander.selectbox(
+                            "Agent model",
                             options=available_models,
-                            index=0
-                        ),
-        "main_agent_model": gemini_expander.selectbox(
-                            "Main agent model",
-                            options=available_models,
-                            index=0
+                            index=2
                         )
-    }
 
     g3_thinking_level = gemini_expander.selectbox(
                             "Gemini3 thinking level",
@@ -90,19 +82,13 @@ def render_sidebar() -> AgentSettings:
         label_visibility="collapsed"
     )
 
-    tavily_advanced_extraction = tavily_expander.toggle(
-        "Advanced extraction", value=True,
-        help="Enable if there is an issue with extracting the job description"
-    )
-
     logging = st.sidebar.toggle("*Logging*", value=False)
 
     return AgentSettings(
-        models=models,
+        model=model,
         g3_thinking_level=g3_thinking_level,
         top_p=top_p,
         language_level=language_level,
-        tavily_advanced_extraction=tavily_advanced_extraction
         ), logging
 
 

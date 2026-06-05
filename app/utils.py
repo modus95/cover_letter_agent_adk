@@ -10,27 +10,16 @@ import datetime
 import shutil
 from urllib.parse import urlparse
 from dataclasses import dataclass
-from typing import Dict, Optional, Any
+from typing import Optional
 from contextlib import suppress
 from pydantic import BaseModel, Field
 
 import pypdf
 
 from google.genai import Client, types
-from google.adk.models.google_llm import Gemini
-from google.adk.agents.callback_context import CallbackContext
-from google.adk.tools.tool_context import ToolContext
 from google.adk.tools.base_tool import BaseTool
 from google.adk.planners.built_in_planner import BuiltInPlanner
 from google.adk.runners import Runner
-
-
-RETRY_CONFIG = types.HttpRetryOptions(
-    attempts=3,  # Maximum retry attempts
-    exp_base=5,  # Delay multiplier
-    initial_delay=1,
-    http_status_codes=[429, 500, 503, 504], # Retry on these HTTP errors
-)
 
 
 class ResponseContent(BaseModel):
@@ -59,18 +48,16 @@ class AgentSettings:
     Represents the settings for an agent.
 
     Attributes:
-        models (Optional[str | dict]): The name of the model or a dictionary
+        model (str): The name of the model
         specifying different models for sub-agents and the main agent.
         g3_thinking_level (str): The thinking level of Gemini3 to use.
         top_p (float): The top-p parameter (0.0-1.0) controls the diversity of the generated text.
         language_level (str): The language level (B1-C2) to use.
-        tavily_advanced_extraction (bool): Whether to use Tavily advanced extraction.
     """
-    models: Optional[str | dict]
+    model: str
     g3_thinking_level: str
     top_p: float
     language_level: str
-    tavily_advanced_extraction: bool
 
 
 def load_json(data):
@@ -84,85 +71,23 @@ def load_json(data):
 
 def logging_tool_output_status(
         tool: BaseTool,
-        args: Dict[str, Any],
-        tool_context: ToolContext,
         tool_response) -> None:
-    """To Do: Add docstring."""    
-
-    status_logger = logging.getLogger("agent_status_logger")
-    # output_logger = logging.getLogger("agent_output_logger")
-
-    tool_name = tool.name
-
-    status_logger.info("%s: %s", tool_name, tool_response)
-        # output_logging(output_logger,
-        #                f"{log_title} / {status.upper()}",
-        #                message)
-
-    # except (KeyError, AttributeError) as err:
-    #     output_logging(output_logger,
-    #                    f"{log_title} / (Raw Output)",
-    #                    json.dumps(output_dict, indent=4),
-    #                    str(err))
-    # except json.JSONDecodeError as err:
-    #     output_logging(status_logger,
-    #                    f"{log_title} / ERROR",
-    #                    output_dict,
-    #                    str(err))
-
-
-
-def logging_agent_output_status(callback_context: CallbackContext) -> None:
-    """
-    Logs the output status and message of an agent's operation.
-
-    This function extracts the agent's name and its output from the provided
-    `CallbackContext`, determines the status (success or error), and logs
-    the relevant information using a dedicated agent output logger. It handles
-    different agents by mapping their names to specific output keys.
-
-    Args:
-        callback_context (CallbackContext): The context object containing
-                                            the agent's state and name
-    """
+    """Logs the status of a tool's execution and its output."""    
 
     status_logger = logging.getLogger("agent_status_logger")
     output_logger = logging.getLogger("agent_output_logger")
 
-    output_keys = {
-        "cv_parcer_agent": "cv_info",
-        "job_information_agent": "job_role_information",
-        "company_web_researcher": "company_info"
-    }
+    status = 'SUCESS' if tool_response else 'ERROR'
+    warning_msg = None if tool_response else "Tool execution failed or returned empty response."
 
-    current_state = callback_context.state
-    agent_name = callback_context.agent_name
-    agent_output_key = output_keys[agent_name]
-    log_title = " ".join(agent_output_key.split("_")).upper()
+    status_logger.info("%s: %s", tool.name, status)
 
-    try:
-        output_dict = current_state.get(agent_output_key)
-        if isinstance(output_dict, str):
-            output_dict = load_json(output_dict)
-
-        status = output_dict.get("status")
-        message = output_dict.get("message")
-
-        status_logger.info("%s: %s", agent_name, status.upper())
-        output_logging(output_logger,
-                       f"{log_title} / {status.upper()}",
-                       message)
-
-    except (KeyError, AttributeError) as err:
-        output_logging(output_logger,
-                       f"{log_title} / (Raw Output)",
-                       json.dumps(output_dict, indent=4),
-                       str(err))
-    except json.JSONDecodeError as err:
-        output_logging(status_logger,
-                       f"{log_title} / ERROR",
-                       output_dict,
-                       str(err))
+    output_logging(
+        output_logger,
+        f"{tool.name} / {status}",
+        tool_response,
+        warning_msg
+        )
 
 
 def get_client() -> Client:
@@ -190,22 +115,7 @@ def get_gemini_model_list() -> list:
     return models[::-1]  # Reverse to show the latest models first
 
 
-def define_model(model_name:str) -> Gemini:
-    """
-    Initializes and returns a Gemini model instance.
-
-    Args:
-        model_name (str): The name of the Gemini model to instantiate.
-    Returns:
-        Gemini: An instance of the Gemini model configured with the specified retry options.
-    """
-    # Remove parentheses and their contents from the model name
-    # example: "gemini-3-pro-preview (Low thinking)" -> "gemini-3-pro-preview"
-    model_name = re.sub(r"\s*\([^)]*\)", "", model_name)
-    return Gemini(model=model_name, retry_options=RETRY_CONFIG)
-
-
-def get_planner(md: Gemini, thinking_level: str) -> Optional[BuiltInPlanner]:
+def get_planner(agent_settings: AgentSettings) -> BuiltInPlanner:
     """
     Create a built-in planner with model-appropriate thinking configuration.
 
@@ -213,13 +123,15 @@ def get_planner(md: Gemini, thinking_level: str) -> Optional[BuiltInPlanner]:
     For Gemini 3+ models, this uses the provided `thinking_level`.
 
     Args:
-        md (Gemini): Configured Gemini model instance.
-        thinking_level (str): Thinking level to apply for Gemini 3+ models.
+        agent_settings (AgentSettings): The configuration settings for the agents.
 
     Returns:
-        Optional[BuiltInPlanner]: Planner configured for the given model version.
+        BuiltInPlanner: Planner configured for the given model version.
     """
-    version = float(md.model.split("-")[1])
+    model = agent_settings.model
+    thinking_level = agent_settings.g3_thinking_level
+
+    version = float(model.split("-")[1])
     thinking_config = (
         types.ThinkingConfig(thinking_budget=2048) if version < 3
             else types.ThinkingConfig(thinking_level=thinking_level)
