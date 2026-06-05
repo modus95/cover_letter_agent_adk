@@ -114,7 +114,6 @@ if __name__ == "__main__":
                     model=args.model,
                     g3_thinking_level=args.thinking_level,
                     language_level=language_levels[args.language_level],
-                    top_p=0.95
                 )
 
     # Set up and run the asynchronous main function using an event loop

@@ -3,7 +3,6 @@ import logging
 
 from google.adk.tools.agent_tool import AgentTool
 from google.adk.agents import LlmAgent
-from google.genai import types
 from google.adk.tools import url_context, google_search
 
 from utils import AgentSettings, get_planner, logging_tool_output_status
@@ -28,7 +27,6 @@ def logging_agent_settings(agent_settings: AgentSettings, planner) -> None:
         status_logger.info("Agent thinking budget: %s",
                             planner.thinking_config.thinking_budget)
 
-    status_logger.info("Top P: %s", agent_settings.top_p)
     status_logger.info("Language level: %s", agent_settings.language_level)
     status_logger.info("Gemini3 thinking level: %s", agent_settings.g3_thinking_level)
 
@@ -121,7 +119,6 @@ Return ONLY the requested information, do not include any conversational filler,
         description="Agent to generate a tailored cover letter for a job application",
         model=agent_settings.model,
         planner=agent_planner,
-        generate_content_config=types.GenerateContentConfig(top_p=agent_settings.top_p),
         static_instruction="You are an expert career coach and professional copywriter.",
         instruction=agent_instruction,
         tools=[AgentTool(agent=search_agent), AgentTool(agent=url_context_agent)],
@@ -134,7 +131,6 @@ root_agent = get_root_agent(
     AgentSettings(
         model="gemini-3.1-flash-lite",
         language_level="Intermediate (B1)",
-        top_p=0.95,
         g3_thinking_level="minimal",
         )
     )

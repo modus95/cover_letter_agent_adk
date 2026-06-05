@@ -61,16 +61,6 @@ def render_sidebar() -> AgentSettings:
                                   "for cover letter generation"),
                         )
 
-    top_p = gemini_expander.slider(
-                            "Top P",
-                            min_value=0.0,
-                            max_value=1.0,
-                            value=0.95,
-                            step=0.05,
-                            help=("The lower - more predictable text.\n"
-                                  "The higher - more creative text.")
-                        )
-
     language_level = language_level_expander.radio(
         "Language level",
         options=["Intermediate (B1)",
@@ -87,7 +77,6 @@ def render_sidebar() -> AgentSettings:
     return AgentSettings(
         model=model,
         g3_thinking_level=g3_thinking_level,
-        top_p=top_p,
         language_level=language_level,
         ), logging
 
