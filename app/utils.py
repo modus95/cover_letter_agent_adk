@@ -12,34 +12,12 @@ from urllib.parse import urlparse
 from dataclasses import dataclass
 from typing import Optional
 from contextlib import suppress
-from pydantic import BaseModel, Field
 
 import pypdf
 
 from google.genai import Client, types
-from google.adk.tools.base_tool import BaseTool
 from google.adk.planners.built_in_planner import BuiltInPlanner
 from google.adk.runners import Runner
-
-
-class ResponseContent(BaseModel):
-    """
-    Represents the structured content of an agent's response.
-
-    Attributes:
-        status (str): The status of the agent response, either 'success' or 'error'.
-        message (str): The main content of the agent response if status is 'success',
-                       or the error message if status is 'error'.
-    """
-    status: str = Field(
-        description="The status of the agent response. Should be 'success' or 'error'."
-    )
-    message: str = Field(
-        description=(
-            "The main content of the agent response if the status is 'success'."
-            " The error message if the status is 'error'."
-            )
-    )
 
 
 @dataclass
@@ -69,15 +47,16 @@ def load_json(data):
     return json.loads(json_str)
 
 
-def logging_tool_output_status(
-        tool: BaseTool,
-        tool_response) -> None:
+def logging_tool_output_status(**kwargs) -> None:
     """Logs the status of a tool's execution and its output."""    
 
     status_logger = logging.getLogger("agent_status_logger")
     output_logger = logging.getLogger("agent_output_logger")
 
-    status = 'SUCESS' if tool_response else 'ERROR'
+    tool = kwargs.get("tool")
+    tool_response = kwargs.get("tool_response")
+
+    status = 'SUCCESS' if tool_response else 'ERROR'
     warning_msg = None if tool_response else "Tool execution failed or returned empty response."
 
     status_logger.info("%s: %s", tool.name, status)
