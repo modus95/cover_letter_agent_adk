@@ -10,7 +10,7 @@ import datetime
 import shutil
 from urllib.parse import urlparse
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, Optional, Any
 from contextlib import suppress
 from pydantic import BaseModel, Field
 
@@ -19,6 +19,8 @@ import pypdf
 from google.genai import Client, types
 from google.adk.models.google_llm import Gemini
 from google.adk.agents.callback_context import CallbackContext
+from google.adk.tools.tool_context import ToolContext
+from google.adk.tools.base_tool import BaseTool
 from google.adk.planners.built_in_planner import BuiltInPlanner
 from google.adk.runners import Runner
 
@@ -78,6 +80,36 @@ def load_json(data):
     # Remove invalid escaped single quotes that might be left by the LLM
     json_str = json_str.replace("\\'", "'")
     return json.loads(json_str)
+
+
+def logging_tool_output_status(
+        tool: BaseTool,
+        args: Dict[str, Any],
+        tool_context: ToolContext,
+        tool_response) -> None:
+    """To Do: Add docstring."""    
+
+    status_logger = logging.getLogger("agent_status_logger")
+    # output_logger = logging.getLogger("agent_output_logger")
+
+    tool_name = tool.name
+
+    status_logger.info("%s: %s", tool_name, tool_response)
+        # output_logging(output_logger,
+        #                f"{log_title} / {status.upper()}",
+        #                message)
+
+    # except (KeyError, AttributeError) as err:
+    #     output_logging(output_logger,
+    #                    f"{log_title} / (Raw Output)",
+    #                    json.dumps(output_dict, indent=4),
+    #                    str(err))
+    # except json.JSONDecodeError as err:
+    #     output_logging(status_logger,
+    #                    f"{log_title} / ERROR",
+    #                    output_dict,
+    #                    str(err))
+
 
 
 def logging_agent_output_status(callback_context: CallbackContext) -> None:

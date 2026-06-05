@@ -87,12 +87,12 @@ def get_root_agent(agent_settings: AgentSettings):
         sub_agents=[parallel_research_team, cl_generator_agent],
     )
 
-    return ra
+    return cl_generator_agent
 
 
 root_agent = get_root_agent(
     AgentSettings(
-        models="gemini-2.5-flash",
+        models="gemini-3.1-flash-lite",
         language_level="Intermediate (B1)",
         top_p=0.95,
         g3_thinking_level="minimal",
