@@ -146,7 +146,7 @@ def main():
             agent_result.get("status", "") == "error"):
             ui.render_error(left, right, agent_result)
 
-        ui.render_page_link(left, "logs_viewer", "subagent logs")
+        ui.render_page_link(left, "logs_viewer", "tool results")
 
     # ---- ERROR MESSAGE ----
     if st.session_state.is_error["error"]:

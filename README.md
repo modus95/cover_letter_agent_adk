@@ -41,9 +41,9 @@ app/
 
 ## 📊 Logging
 
-To help monitor the process, the outputs of all sub-agents are logged in the `logs/` folder. These can be viewed directly within the Streamlit application or via the raw log files.
+To help monitor the process, the intermediate results of agent's tools are logged in the `logs/` folder. These can be viewed directly within the Streamlit application or via the raw log files.
 
-- **Logs Viewer**: Access the **"log"** link in the Streamlit UI to view agent activities and reasoning in real-time.
+- **Logs Viewer**: Access the **"tool results"** link in the Streamlit UI to view agent activities and reasoning in real-time.
 - **File Name**: `sub_agents_output_<company_domain>.log`
 - **Utility**: These logs are useful for reviewing the information discovered and extracted about the company and the specific job role.
 
@@ -101,7 +101,7 @@ Alternatively, you can use the provided helper script:
 - **Language Level** selection (Intermediate B1 to Proficient C2).
 - **Gemini3 Thinking Level** configuration (minimal, low, medium, high).
 - Real-time status updates.
-- **Built-in Logs Viewer**: Dedicated page to monitor sub-agent reasoning and research data.
+- **Built-in Logs Viewer**: Dedicated page to monitor agent's tool results and research data.
 - **Logging Toggle**: Controls the console logging level. When enabled, verbose log information about the agent's workflow is printed out in the console (DEBUG mode).
 - Copy-to-clipboard functionality for the generated letter.
 
