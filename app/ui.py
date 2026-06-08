@@ -150,7 +150,7 @@ def render_page_link(container, page_name, link_text):
     ''')
 
 
-def render_success(left, right, agent_result):
+def render_success(left, right, agent_result, token_tracker=None):
     """Renders the success message and result."""
     # Add invisible status marker for CSS targeting
     left.html('<div data-status="success" style="display:none;"></div>')
@@ -166,10 +166,19 @@ def render_success(left, right, agent_result):
     )
 
     with right:
-        c1, c2 = st.columns([0.85, 0.15], vertical_alignment="center")
+        c1, c2, c3 = st.columns([0.85, 0.075, 0.075], vertical_alignment="center")
         with c1:
             st.markdown("*:red[*Read carefully and make adjustments if needed.]*")
+
         with c2:
+            with st.popover(label=":primary-badge[:material/euro:]"):   # :material/paid:
+                md_str = (
+                    token_tracker.markdown_summary() if token_tracker
+                    else "Token usage info not available."
+                )
+                st.markdown(md_str)
+
+        with c3:
             st_copy_to_clipboard_button(agent_result.get("message", ""))
 
 

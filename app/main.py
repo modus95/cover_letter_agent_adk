@@ -12,6 +12,7 @@ from google.adk.plugins.logging_plugin import LoggingPlugin
 import utils
 from utils import AgentSettings
 from cover_letter_agent.agent import get_root_agent
+from tokentracker import TokenTrackerPlugin
 
 
 load_dotenv()
@@ -32,7 +33,8 @@ async def main_async(
 ):
     """Main entry point for the cover letter agent."""
 
-    plugins = [LoggingPlugin()] if verbose else None
+    token_tracker = TokenTrackerPlugin()
+    plugins = [LoggingPlugin(), token_tracker] if verbose else [token_tracker]
 
     # Initialize the runner
     runner = Runner(
@@ -70,11 +72,12 @@ async def main_async(
 
     print("\nProcessing your request...\n")
     # Process the user query through the agent
-    agent_response = await utils.call_agent_async(
+    agent_response, _ = await utils.call_agent_async(
         runner,
         USER_ID,
         session_id,
         prompt,
+        token_tracker,
     )
 
     print("\nTHE AGENT RESPONSE:\n")
@@ -83,6 +86,7 @@ async def main_async(
     if agent_response:
         print(agent_response.get("status").upper(),":")
         print(agent_response.get("message"))
+        token_tracker.print_summary()
     else:
         print("No response from the agent! Check logs for details.")
 

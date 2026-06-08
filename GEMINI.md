@@ -1,30 +1,30 @@
 # Cover Letter Agent (Google ADK)
 
 ## Project Overview
-This project is an intelligent agentic workflow designed to generate professional, context-aware cover letters. It utilizes **Google's Agent Development Kit (ADK)** and **Gemini models** to orchestrate a team of AI agents that research company culture, parse user CVs, analyze job descriptions, and synthesize this information into a high-quality cover letter.
+An intelligent agentic workflow designed to generate tailored, professional cover letters. This project utilizes **Google's ADK (Agent Development Kit)** and **Gemini models** to research company information, parse your CV, and analyze job descriptions to craft the perfect cover letter.
 
 ## Architecture
-The system employs a **Sequential Agent** pattern that orchestrates a **Parallel Research Team**:
-
-1.  **Input Analysis:** The system accepts a PDF CV and URLs for the target company and job description.
-2.  **Parallel Research Team (Sub-Agents):**
-    *   **`web_researcher_agent`:** Uses Google Search to gather insights on company culture, mission, and values.
-    *   **`job_information_agent`:** Uses the Tavily API to extract detailed requirements from the job posting.
-3.  **Synthesis & Generation:**
-    *   **`cl_generator_agent`:** Aggregates the research data and CV content to generate the final cover letter using a specified Gemini model.
+1. The app reads the uploaded CV and builds a prompt containing the company URL, job URL, and CV text.
+2. The root `LlmAgent` (`cl_generator_agent`) uses two tools:
+   - `SearchAgent` with `google_search` to learn about the company.
+   - `UrlContextAgent` with `url_context` to extract the job description.
+3. The agent returns a JSON string with the final result:
+   - `status: "success"` with the generated letter in `message`
+   - `status: "error"` with a clear failure message.
 
 ## Key Directories & Files
 
 *   `app/`: Core application source code.
-    *   `main.py`: CLI entry point for local execution.
-    *   `streamlit_app.py`: Streamlit-based web user interface.
-    *   `deploy.py`: Deployment script (likely for GCP).
-    *   `cover_letter_agent/`: Main orchestration logic.
-    *   `sub_agents/`: Directory containing specialized agents (`web_researcher`, `job_info`, `cl_generator`).
-    *   `data/`: Directory for storing processed data or temporary files.
-    *   `.env.example`: Template for environment variables.
+    *   `cover_letter_agent/`: Main agent orchestration.
+    *   `main.py`: CLI entry point.
+    *   `streamlit_app.py`: Main Streamlit web application.
+    *   `pages/logs_viewer.py`: Logs monitoring interface.
+    *   `ui.py`: Streamlit UI components.
+    *   `style.css`: Custom styling for Streamlit.
+    *   `utils.py`: Shared utility functions.
+    *   `.env`: Configuration file.
 *   `logs/`: Stores execution logs (e.g., `sub_agents_output_<domain>.log`) useful for debugging agent reasoning.
-*   `cl_agent_uv.sh`: specific helper script for running the app with `uv`, handling branch switching for deployment.
+*   `cl_agent_uv.sh`: Specific helper script for running the app with `uv`, handling branch switching for deployment.
 *   `Dockerfile` & `run_docker.sh`: Docker configuration for containerized deployment.
 
 ## Setup & Installation
@@ -33,25 +33,23 @@ The system employs a **Sequential Agent** pattern that orchestrates a **Parallel
 *   Python >= 3.12
 *   API Keys:
     *   **Google Gemini API Key**
-    *   **Tavily API Key** (for job description extraction)
 
 ### Installation
 1.  **Environment Setup:**
-    Create a `.env` file in the `app/` directory based on `.env.example`:
+    Create a `.env` file in the `app/` directory (or root) based on the template:
     ```env
     GOOGLE_GENAI_USE_VERTEXAI=False
     GOOGLE_API_KEY=<your_google_api_key>
-    TAVILY_API_KEY=<your_tavily_api_key>
     ```
 
 2.  **Dependencies:**
-    Using `pip`:
-    ```bash
-    pip install -r app/requirements.txt
-    ```
-    Or using `uv` (recommended):
+    Using `uv` (recommended):
     ```bash
     uv sync
+    ```
+    Or using `pip`:
+    ```bash
+    pip install -r app/requirements.txt
     ```
 
 ## Running the Application
@@ -61,7 +59,7 @@ The most feature-rich interface, allowing PDF uploads and model configuration.
 
 **Standard run:**
 ```bash
-streamlit run app/streamlit_app.py
+uv run streamlit run app/streamlit_app.py
 ```
 
 **Using `uv` helper script:**
@@ -74,18 +72,19 @@ This script handles branch switching for local vs. remote modes.
 ### 2. CLI Mode
 Useful for quick testing or automation.
 ```bash
-python app/main.py -f path/to/your_cv.pdf [options]
+uv run python app/main.py -f path/to/your_cv.pdf [options]
 ```
 **Options:**
-*   `-v`: Verbose logging.
-*   `-t`: Enable Tavily advanced extraction.
-*   `-l <level>`: Language level (b1, b2, c1, c2).
-*   `-T <level>`: Thinking level (minimal, low, medium, high).
+*   `-f`, `--file_name`: Path to the PDF CV file.
+*   `-v`, `--verbose`: Enable verbose logging.
+*   `-l`, `--language_level`: Language level (b1, b2, c1, c2).
+*   `-T`, `--thinking_level`: Gemini 3.0 thinking level (minimal, low, medium, high).
+*   `-m`, `--model`: Gemini model used by the root agent.
 
 ### 3. Google ADK Web UI
 Launch the agent utilizing the standard ADK web interface.
 ```bash
-adk web
+adk web [options]
 ```
 
 ### 4. Docker
@@ -97,11 +96,11 @@ docker build -t cl-agent-streamlit .
 # Run (helper script available)
 ./run_docker.sh
 # OR manually
-docker run --name cl-agent --rm -it -p 8501:8501 -e GOOGLE_API_KEY=... -e TAVILY_API_KEY=... cl-agent-streamlit
+docker run --name cl-agent --rm -it -p 8501:8501 -e GOOGLE_API_KEY=<your_google_api_key> -v "$(pwd)/logs:/cl_agent/logs" cl-agent-streamlit
 ```
 
 ## Development Conventions
 *   **Agent Framework:** Built on Google ADK.
-*   **Logging:** Check `logs/` for detailed agent outputs to understand the reasoning process.
+*   **Logging:** Check `logs/` for detailed agent outputs to understand the reasoning process. You can also view logs using the Logs Viewer in the Streamlit UI (`pages/logs_viewer.py`).
 *   **State Management:** Streamlit session state is used for the UI interaction flow.
 *   **Testing:** Use the CLI mode for rapid feedback loops during development.

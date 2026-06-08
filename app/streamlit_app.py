@@ -15,6 +15,7 @@ from google.adk.plugins.logging_plugin import LoggingPlugin
 import utils
 from utils import AgentSettings
 from cover_letter_agent.agent import get_root_agent
+from tokentracker import TokenTrackerPlugin
 
 load_dotenv()
 nest_asyncio.apply()
@@ -37,20 +38,26 @@ if "is_error" not in st.session_state:
         "message": ""
     }
 
+if "token_usage" not in st.session_state:
+    st.session_state.token_usage = None
+
 
 async def run_agent(
     prompt: str,
     agent_settings: AgentSettings,
     logging: bool,
-) -> str:
+) -> tuple[str, TokenTrackerPlugin]:
     """Run the agent asynchronously."""
     session_service = InMemorySessionService()
+    token_tracker = TokenTrackerPlugin()
+
+    plugins = [LoggingPlugin(), token_tracker] if logging else [token_tracker]
 
     runner = Runner(
         agent=get_root_agent(agent_settings),
         app_name=APP_NAME,
         session_service=session_service,
-        plugins=[LoggingPlugin()] if logging else None
+        plugins=plugins
     )
 
     # Create a new session
@@ -59,14 +66,15 @@ async def run_agent(
     session_id = new_session.id
 
     # Process the user query through the agent
-    agent_response = await utils.call_agent_async(
+    agent_response, _ = await utils.call_agent_async(
         runner,
         USER_ID,
         session_id,
         prompt,
+        token_tracker,
     )
 
-    return agent_response
+    return agent_response, token_tracker
 
 
 def main():
@@ -103,7 +111,7 @@ def main():
 
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-                result = loop.run_until_complete(
+                result, token_tracker = loop.run_until_complete(
                     run_agent(
                         prompt,
                         agent_settings,
@@ -113,6 +121,7 @@ def main():
 
                 # Save the result to session_state (PERSIST)
                 st.session_state.generated_cover_letter = result
+                st.session_state.token_usage = token_tracker
 
                 # Save the log file as `sub_agents_output_<company_domain>.log`
                 utils.copy_log_file(LOGFILE_NAME, company_url)
@@ -140,7 +149,8 @@ def main():
 
         if agent_result.get("status", "") == "success":
             ui.render_success(left, right,
-                              agent_result)
+                              agent_result,
+                              st.session_state.get("token_usage"))
 
         if (not agent_result or
             agent_result.get("status", "") == "error"):

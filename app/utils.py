@@ -19,6 +19,8 @@ from google.genai import Client, types
 from google.adk.planners.built_in_planner import BuiltInPlanner
 from google.adk.runners import Runner
 
+from tokentracker import TokenTrackerPlugin
+
 
 @dataclass
 class AgentSettings:
@@ -290,6 +292,7 @@ async def call_agent_async(
     user_id: str,
     session_id: str,
     prompt: str,
+    ttp: TokenTrackerPlugin,
     ):
     """Call the agent asynchronously with the user's prompt and file."""
 
@@ -300,6 +303,8 @@ async def call_agent_async(
         parts=[types.Part(text=prompt)]
         )
 
+    # TokenTrackerPlugin instance (ttp) is updated while agent is running
+    # through the callback method `on_event_callback`
     agen = runner.run_async(
         user_id=user_id,
         session_id=session_id,
@@ -316,4 +321,4 @@ async def call_agent_async(
         with suppress(Exception):
             await agen.close()
 
-    return final_response_text
+    return final_response_text, ttp
