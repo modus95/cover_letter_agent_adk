@@ -56,7 +56,7 @@ class TokenTrackerPlugin(BasePlugin):
                 )
             warning = ""
 
-        md_str = "#### 📊 Token Usage\n\n"
+        md_str = "#### 📊 Token Usage\n"
 
         md_str += "| Agent | Input Tokens | Output Tokens | Total |\n"
         md_str += "| :--- | :---: | :---: | :---: |\n"
@@ -70,21 +70,3 @@ class TokenTrackerPlugin(BasePlugin):
         md_str += cost_row
 
         return md_str, warning
-
-
-    def print_summary(self):
-        """Prints a detailed breakdown of token usage."""
-
-        print("\n" + "="*30)
-        print("TOKEN USAGE REPORT")
-        print("="*30)
-        for agent, counts in self.usage_log.items():
-            print(f"Agent: {agent}")
-            print(f"  - Input:  {counts['input']:,}")
-            print(f"  - Output: {counts['output']:,}")
-
-        tin, tout = self._get_totals()
-        print("-" * 30)
-        print(f"GRAND TOTAL INPUT:  {tin:,}")
-        print(f"GRAND TOTAL OUTPUT: {tout:,}")
-        print("="*30 + "\n")

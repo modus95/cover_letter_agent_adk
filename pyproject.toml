@@ -10,5 +10,6 @@ dependencies = [
     "nest-asyncio>=1.6.0",
     "pypdf>=6.5.0",
     "python-dotenv>=1.2.1",
+    "rich>=15.0.0",
     "streamlit==1.51.0",
 ]

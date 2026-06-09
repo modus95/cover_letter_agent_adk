@@ -22,6 +22,9 @@ from google.adk.runners import Runner
 
 from tokentracker import TokenTrackerPlugin
 
+from rich.table import Table
+from rich import box
+
 
 @dataclass
 class AgentSettings:
@@ -49,7 +52,7 @@ def load_json(data):
 
 
 def logging_tool_output_status(**kwargs) -> None:
-    """Logs the status of a tool's execution and its output."""    
+    """Logs the status of a tool's execution and its output."""
 
     status_logger = logging.getLogger("agent_status_logger")
     output_logger = logging.getLogger("agent_output_logger")
@@ -364,10 +367,59 @@ def token_usage_report(
 
     Args:
         token_tracker (TokenTrackerPlugin): The token tracker instance containing usage data.
-        model (str): The name of the model to determine pricing.    
+        model (str): The name of the model to determine pricing.
     """
     if token_tracker is None:
         return "Token usage info not available.", "error"
 
     pricing = load_model_pricing(model)
     return token_tracker.markdown_summary(pricing)
+
+
+def to_rich_table(md_str: str, w:str) -> Table:
+    """
+    Convert a markdown table to a Rich table.
+
+    Args:
+        md_str (str): The markdown string containing the table.
+
+    Returns:
+        Table: The Rich table.
+    """
+    lines = [line.strip() for line in md_str.split('\n') if line.strip()]
+
+    title = lines[0].replace('#### ', '')
+    header_line = lines[1]
+    headers = [h.strip() for h in header_line.split('|') if h.strip()]
+
+    table = Table(
+        title=title + ':\n',
+        show_edge=False,
+        box = box.SIMPLE_HEAD,
+        title_style="bold bright_cyan",
+        title_justify='left'
+        )
+
+    for header in headers:
+        table.add_column(header, justify="center" if header != "Agent" else "left")
+
+    # Process data rows
+    data_lines = lines[3:]  # Skip Header, Separator, and Title
+    total_rows = len(data_lines)
+    delta = int(len(w) > 0)
+
+    for i, line in enumerate(data_lines, 1):
+        row_data = [col.replace("**","").strip() for col in line.split('|') if col.strip()]
+
+        end_selection = i == total_rows - 2 + delta
+        row_style = None
+
+        if i > total_rows - 2 + delta:
+            row_style = "bold"
+        if i == total_rows + delta:
+            row_style += " cyan"
+            row_data[-1] = f"[italic turquoise2] {row_data[-1]}"
+
+        table.add_row(*row_data, style=row_style, end_section=end_selection)
+
+    return table

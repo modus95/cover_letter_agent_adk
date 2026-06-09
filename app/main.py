@@ -14,16 +14,17 @@ from utils import AgentSettings
 from cover_letter_agent.agent import get_root_agent
 from tokentracker import TokenTrackerPlugin
 
+import rich
+from rich.console import Console
 
 load_dotenv()
+console = Console()
 
 session_service = InMemorySessionService()
 
 APP_NAME = "Cover Letter Agent"
 USER_ID = "slu"
 LOGFILE_NAME = "sub_agents_output.log"
-
-utils.setup_loggers(LOGFILE_NAME)
 
 
 async def main_async(
@@ -49,28 +50,27 @@ async def main_async(
         app_name=APP_NAME, user_id=USER_ID)
     session_id = new_session.id
 
-    print("Welcome to the cover letter agent!\n")
-    print("Please provide the following information:\n")
-
     # Use environment variables if provided, otherwise prompt the user
     # (for debugging purposes)
     company_url = os.getenv("COMPANY_URL")
     if not company_url:
-        company_url = input("Company URL: ")
+        company_url = console.input("[blue]Company URL: ")
     else:
-        print(f"Company URL: {company_url}")
+        rich.print(f"[blue]Company URL: [white]{company_url}")
 
     job_role_url = os.getenv("JOB_ROLE_URL")
     if not job_role_url:
-        job_role_url = input("Job role URL: ")
+        job_role_url = console.input("[blue]Job URL: ")
     else:
-        print(f"Job role URL: {job_role_url}")
+        rich.print(f"[blue]Job URL: [white]{job_role_url}")
+
+    utils.setup_loggers(LOGFILE_NAME)
 
     prompt = utils.get_prompt(company_url,
                               job_role_url,
                               file_name)
 
-    print("\nProcessing your request...\n")
+    rich.print("[italic turquoise2]\nProcessing your request...\n")
     # Process the user query through the agent
     agent_response, _ = await utils.call_agent_async(
         runner,
@@ -80,17 +80,23 @@ async def main_async(
         token_tracker,
     )
 
-    print("\nTHE AGENT RESPONSE:\n")
     if isinstance(agent_response, str):
         agent_response = utils.load_json(agent_response)
     if agent_response:
-        print(agent_response.get("status").upper(),":")
+        report, w = utils.token_usage_report(token_tracker, agnt_settings.model)
+
+        console.rule("[bold bright_cyan]COVER LETTER", style="bright_cyan")
         print(agent_response.get("message"))
-        report = utils.token_usage_report(token_tracker, agnt_settings.model)
-        print(report[0])
-        print(report[1])
+        console.rule(style="bright_cyan")
+
+        if w == "error":
+            rich.print(f"[italic red]{report}")
+        else:
+            console.print(utils.to_rich_table(report, w))
+            if w:
+                rich.print(f"[italic yellow] ⚠️  {w}" )
     else:
-        print("No response from the agent! Check logs for details.")
+        rich.print("[bold red]❌ No response from the agent! Check logs for details.")
 
     # Save the log file as `sub_agents_output_<company_domain>.log`
     utils.copy_log_file(LOGFILE_NAME, company_url)
@@ -124,15 +130,10 @@ if __name__ == "__main__":
 
     # Set up and run the asynchronous main function using an event loop
     # This is necessary for the Google ADK to work properly
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(
-            main_async(
-                args.file_name,
-                args.verbose,
-                agent_settings
-                )
-            )
-    finally:
-        loop.close()
+    asyncio.run(
+        main_async(
+            args.file_name,
+            args.verbose,
+            agent_settings
+        )
+    )

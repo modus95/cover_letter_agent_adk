@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.adk.plugins.logging_plugin import LoggingPlugin
+from google.genai.errors import ClientError
 
 import utils
 from utils import AgentSettings
@@ -109,9 +110,7 @@ def main():
                                           job_description_url,
                                           temp_file_path)
 
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                result, token_tracker = loop.run_until_complete(
+                result, token_tracker = asyncio.run(
                     run_agent(
                         prompt,
                         agent_settings,
@@ -126,7 +125,7 @@ def main():
                 # Save the log file as `sub_agents_output_<company_domain>.log`
                 utils.copy_log_file(LOGFILE_NAME, company_url)
 
-            except RuntimeError as e:
+            except (RuntimeError, ClientError) as e:
                 st.session_state.is_error = {
                     "error": True,
                     "message": str(e)
