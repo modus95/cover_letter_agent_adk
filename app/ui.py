@@ -150,7 +150,19 @@ def render_page_link(container, page_name, link_text):
     ''')
 
 
-def render_success(left, right, agent_result, token_tracker=None):
+def render_popover_report(token_report: tuple[str, str]):
+    """Renders the token report popover content."""
+    md_text, w = token_report
+    with st.popover(label=":primary-badge[:material/euro:]"):   # :material/paid:
+        if w == "error":
+            st.error(md_text)
+        else:
+            st.markdown(md_text)
+            if w:
+                st.warning(w, icon="⚠️")
+
+
+def render_success(left, right, agent_result, token_report):
     """Renders the success message and result."""
     # Add invisible status marker for CSS targeting
     left.html('<div data-status="success" style="display:none;"></div>')
@@ -171,18 +183,13 @@ def render_success(left, right, agent_result, token_tracker=None):
             st.markdown("*:red[*Read carefully and make adjustments if needed.]*")
 
         with c2:
-            with st.popover(label=":primary-badge[:material/euro:]"):   # :material/paid:
-                md_str = (
-                    token_tracker.markdown_summary() if token_tracker
-                    else "Token usage info not available."
-                )
-                st.markdown(md_str)
+            render_popover_report(token_report)
 
         with c3:
             st_copy_to_clipboard_button(agent_result.get("message", ""))
 
 
-def render_error(left, right, agent_result=None):
+def render_error(left, right, agent_result, token_report):
     """Renders error messages."""
     # Add invisible status marker for CSS targeting
     left.html('<div data-status="error" style="display:none;"></div>')
@@ -195,6 +202,12 @@ def render_error(left, right, agent_result=None):
         md = f"*:blue[{agent_result.get('message', '')}]*"
 
     right.markdown(md)
+
+    with right:
+        _, c2 = st.columns([0.85, 0.15], vertical_alignment="center")
+
+        with c2:
+            render_popover_report(token_report)
 
 
 def render_exception_error(container, message):

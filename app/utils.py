@@ -8,6 +8,7 @@ import pathlib
 import logging
 import datetime
 import shutil
+from pathlib import Path
 from urllib.parse import urlparse
 from dataclasses import dataclass
 from typing import Optional
@@ -88,7 +89,7 @@ def get_gemini_model_list() -> list:
 
     for listed_model in client.models.list():
         result = models_pat.search(listed_model.name)
-        if result:
+        if result and float(result.group(1).split("-")[1]) >= 3:  # Include models v3.0 and higher
             models.append(result.group(1))
 
     return models[::-1]  # Reverse to show the latest models first
@@ -322,3 +323,51 @@ async def call_agent_async(
             await agen.close()
 
     return final_response_text, ttp
+
+
+def load_model_pricing(model: str, price_file: str = "llm_prices.json") -> dict | None:
+    """Load pricing for a specific model from llm_prices.json."""
+
+    prices_path = Path.home() / "Projects" / price_file
+
+    try:
+        with open(prices_path, "r", encoding="utf-8") as file:
+            prices = json.load(file)
+    except (OSError, json.JSONDecodeError):
+        return None
+
+    name_parts = model.split('-')
+    provider_prices = prices.get(name_parts[0], [])
+
+    if not isinstance(provider_prices, list):
+        return None
+
+    # Remove model suffixes such as "preview", "customtools", etc
+    cutted_name = \
+        "-".join(name_parts[:-1]) if name_parts[-1] not in ["flash", "lite", "pro"] else ""
+
+    for entry in provider_prices:
+        if (model == entry.get("model", "") or
+                (cutted_name and cutted_name == entry.get("model", ""))
+            ):
+            return entry
+
+    return None
+
+
+def token_usage_report(
+    token_tracker: TokenTrackerPlugin,
+    model: str,
+    ) -> tuple[str, str]:
+    """
+    Generate a markdown-formatted summary of token usage and estimated costs.
+
+    Args:
+        token_tracker (TokenTrackerPlugin): The token tracker instance containing usage data.
+        model (str): The name of the model to determine pricing.    
+    """
+    if token_tracker is None:
+        return "Token usage info not available.", "error"
+
+    pricing = load_model_pricing(model)
+    return token_tracker.markdown_summary(pricing)

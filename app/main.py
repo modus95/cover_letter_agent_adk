@@ -86,7 +86,9 @@ async def main_async(
     if agent_response:
         print(agent_response.get("status").upper(),":")
         print(agent_response.get("message"))
-        token_tracker.print_summary()
+        report = utils.token_usage_report(token_tracker, agnt_settings.model)
+        print(report[0])
+        print(report[1])
     else:
         print("No response from the agent! Check logs for details.")
 

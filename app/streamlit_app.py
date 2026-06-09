@@ -144,17 +144,22 @@ def main():
     # ---- SHOW RESULT IF AVAILABLE ----
     if st.session_state.generated_cover_letter:
         agent_result = st.session_state.generated_cover_letter
+        report = utils.token_usage_report(
+            st.session_state.get("token_usage"),
+            agent_settings.model
+            )
+
         if isinstance(agent_result, str):
             agent_result = utils.load_json(agent_result)
 
         if agent_result.get("status", "") == "success":
             ui.render_success(left, right,
                               agent_result,
-                              st.session_state.get("token_usage"))
+                              report)
 
         if (not agent_result or
             agent_result.get("status", "") == "error"):
-            ui.render_error(left, right, agent_result)
+            ui.render_error(left, right, agent_result, report)
 
         ui.render_page_link(left, "logs_viewer", "tool results")
 

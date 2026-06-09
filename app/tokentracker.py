@@ -39,13 +39,22 @@ class TokenTrackerPlugin(BasePlugin):
         return total_in, total_out
 
 
-    def markdown_summary(self):
+    def markdown_summary(self, pricing: dict | None) -> tuple[str, str]:
         """Returns a detailed breakdown of token usage as a markdown string."""
         tin, tout = self._get_totals()
 
-        cost_in = (tin / 1_000_000) * 0.075
-        cost_out = (tout / 1_000_000) * 0.30
-        total_cost = cost_in + cost_out
+        cost_row = ""
+        warning = "Couldn't load token pricing for the model. Skipping cost estimate."
+
+        if pricing:
+            cost_in = (tin / 1_000_000) * pricing["input_price"]
+            cost_out = (tout / 1_000_000) * pricing["output_price"]
+            total_cost = cost_in + cost_out
+            cost_row = (
+                f"| **Est. Cost 💰** | **$ {cost_in:.6f}** "
+                f"| **$ {cost_out:.6f}** | **$ {total_cost:.6f}** |"
+                )
+            warning = ""
 
         md_str = "#### 📊 Token Usage\n\n"
 
@@ -58,9 +67,9 @@ class TokenTrackerPlugin(BasePlugin):
             md_str += f"| **{agent}** | {inp:,} | {out:,} | {inp + out:,} |\n"
 
         md_str += f"| **Grand Total** | **{tin:,}** | **{tout:,}** | **{tin + tout:,}** |\n"
-        md_str += \
-        f"| **Est. Cost 💰** | **$ {cost_in:.6f}** | **$ {cost_out:.6f}** | **$ {total_cost:.6f}** |"
-        return md_str
+        md_str += cost_row
+
+        return md_str, warning
 
 
     def print_summary(self):
