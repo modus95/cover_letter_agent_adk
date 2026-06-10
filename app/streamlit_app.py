@@ -11,10 +11,12 @@ from dotenv import load_dotenv
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.adk.plugins.logging_plugin import LoggingPlugin
+from google.genai.errors import ClientError
 
 import utils
 from utils import AgentSettings
 from cover_letter_agent.agent import get_root_agent
+from tokentracker import TokenTrackerPlugin
 
 load_dotenv()
 nest_asyncio.apply()
@@ -37,20 +39,26 @@ if "is_error" not in st.session_state:
         "message": ""
     }
 
+if "token_usage" not in st.session_state:
+    st.session_state.token_usage = None
+
 
 async def run_agent(
     prompt: str,
     agent_settings: AgentSettings,
     logging: bool,
-) -> str:
+) -> tuple[str, TokenTrackerPlugin]:
     """Run the agent asynchronously."""
     session_service = InMemorySessionService()
+    token_tracker = TokenTrackerPlugin()
+
+    plugins = [LoggingPlugin(), token_tracker] if logging else [token_tracker]
 
     runner = Runner(
         agent=get_root_agent(agent_settings),
         app_name=APP_NAME,
         session_service=session_service,
-        plugins=[LoggingPlugin()] if logging else None
+        plugins=plugins
     )
 
     # Create a new session
@@ -59,14 +67,15 @@ async def run_agent(
     session_id = new_session.id
 
     # Process the user query through the agent
-    agent_response = await utils.call_agent_async(
+    agent_response, _ = await utils.call_agent_async(
         runner,
         USER_ID,
         session_id,
         prompt,
+        token_tracker,
     )
 
-    return agent_response
+    return agent_response, token_tracker
 
 
 def main():
@@ -101,9 +110,7 @@ def main():
                                           job_description_url,
                                           temp_file_path)
 
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                result = loop.run_until_complete(
+                result, token_tracker = asyncio.run(
                     run_agent(
                         prompt,
                         agent_settings,
@@ -113,11 +120,12 @@ def main():
 
                 # Save the result to session_state (PERSIST)
                 st.session_state.generated_cover_letter = result
+                st.session_state.token_usage = token_tracker
 
                 # Save the log file as `sub_agents_output_<company_domain>.log`
                 utils.copy_log_file(LOGFILE_NAME, company_url)
 
-            except RuntimeError as e:
+            except (RuntimeError, ClientError) as e:
                 st.session_state.is_error = {
                     "error": True,
                     "message": str(e)
@@ -135,19 +143,24 @@ def main():
     # ---- SHOW RESULT IF AVAILABLE ----
     if st.session_state.generated_cover_letter:
         agent_result = st.session_state.generated_cover_letter
+        report = utils.token_usage_report(
+            st.session_state.get("token_usage"),
+            agent_settings.model
+            )
+
         if isinstance(agent_result, str):
             agent_result = utils.load_json(agent_result)
 
         if agent_result.get("status", "") == "success":
             ui.render_success(left, right,
                               agent_result,
-                              utils.st_copy_to_clipboard_button)
+                              report)
 
         if (not agent_result or
             agent_result.get("status", "") == "error"):
-            ui.render_error(left, right, agent_result)
+            ui.render_error(left, right, agent_result, report)
 
-        ui.render_page_link(left, "logs_viewer", "subagent logs")
+        ui.render_page_link(left, "logs_viewer", "tool results")
 
     # ---- ERROR MESSAGE ----
     if st.session_state.is_error["error"]:

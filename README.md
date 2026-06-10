@@ -6,9 +6,8 @@ An intelligent agentic workflow designed to generate tailored, professional cove
 
 - **Automated Company Research**: Scours the web for company culture, values, mission, and vision using **Google Search** .
 - **CV Parsing**: Extracts key details (Summary, Skills, Experience, Education) from your PDF CV.
-- **Job Description Analysis**: Understands the requirements and nuances of the job posting utilizing **Tavily** [API](https://docs.tavily.com/documentation/api-reference/introduction).
+- **Job Description Analysis**: Understands the requirements and nuances of the job posting.
 - **Context-Aware Generation**: Synthesizes all gathered data to write a non-pretentious, value-focused cover letter.
-- **Multi-Model Support**: Choose different Gemini models for sub-agents and the main generator.
 - **Language Level Customization**: Select specific English proficiency levels (B1, B2, C1, C2).
 - **Gemini 3.0 Thinking Level**: Control the reasoning depth (minimal, low, medium, high) for the latest Gemini models.
 
@@ -19,14 +18,11 @@ The project code is organized within the `app/` directory:
 ```
 app/
 ├── cover_letter_agent/    # Main agent orchestration
-├── sub_agents/            # Specialized sub-agents
-│   ├── cl_generator/      # Cover letter generation logic
-│   ├── job_info/          # Job description parsing logic
-│   └── web_researcher/    # Web research logic
 ├── main.py                # CLI entry point
 ├── streamlit_app.py       # Main Streamlit web application
 ├── pages/                 # Additional Streamlit pages
 │   └── logs_viewer.py     # Logs monitoring interface
+├── tokentracker.py        # Token tracking utility
 ├── ui.py                  # Streamlit UI components
 ├── style.css              # Custom styling for Streamlit
 ├── utils.py               # Shared utility functions
@@ -35,21 +31,20 @@ app/
 
 ## 🛠️ Architecture
 
-The system is built using a **Sequential Agent** that orchestrates a **Parallel Research Team**:
+1. The app reads the uploaded CV and builds a prompt containing the company URL, job URL, and CV text.
+2. The root `LlmAgent` (`cl_generator_agent`) uses two tools:
+   - `SearchAgent` with `google_search` to learn about the company.
+   - `UrlContextAgent` with `url_context` to extract the job description.
+3. The agent returns a JSON string with the final result:
+   - `status: "success"` with the generated letter in `message`
+   - `status: "error"` with a clear failure message.
 
-1.  **Parallel Research Team** (Runs simultaneously):
-    *   `web_researcher_agent`: Uses Google Search to find company insights.
-    *   `job_information_agent`: Uses Tavily API to obtain information about a job role.
-
-2.  **Cover Letter Generator** (`cl_generator_agent`):
-    *   Takes the aggregated outputs from the research team.
-    *   Generates the final cover letter using a Gemini model.
 
 ## 📊 Logging
 
-To help monitor the process, the outputs of all sub-agents are logged in the `logs/` folder. These can be viewed directly within the Streamlit application or via the raw log files.
+To help monitor the process, the intermediate results of agent's tools are logged in the `logs/` folder. These can be viewed directly within the Streamlit application or via the raw log files.
 
-- **Logs Viewer**: Access the **"subagent logs"** link in the Streamlit UI to view agent activities and reasoning in real-time.
+- **Logs Viewer**: Access the **"tool results"** link in the Streamlit UI to view agent activities and reasoning in real-time.
 - **File Name**: `sub_agents_output_<company_domain>.log`
 - **Utility**: These logs are useful for reviewing the information discovered and extracted about the company and the specific job role.
 
@@ -61,12 +56,10 @@ To help monitor the process, the outputs of all sub-agents are logged in the `lo
 - `google-cloud-aiplatform`
 - `streamlit`
 - `python-dotenv`
-- `tavily-python`
 - `nest_asyncio`
-- `pydantic`
 - `pypdf`
+- `rich`
 - Access to Google Gemini API and Search tools.
-- Access to Tavily API (Get your free API key [here](https://docs.tavily.com/documentation/api-credits)).
 
 ## 🔧 Configuration
 
@@ -84,7 +77,6 @@ To help monitor the process, the outputs of all sub-agents are logged in the `lo
     ```env
     GOOGLE_GENAI_USE_VERTEXAI=False
     GOOGLE_API_KEY=<your_google_api_key>
-    TAVILY_API_KEY=<your_tavily_api_key>
     ```
 
 ## 🏃 Usage
@@ -107,14 +99,15 @@ Alternatively, you can use the provided helper script:
 ```
 
 **Features:**
-- Sidebar for selecting **Sub-agents model** and **Main agent model** (e.g., `gemini-2.5-flash`).
-- **Language Level** selection (Intermediate B1 to Proficient C2).
-- **Gemini3 Thinking Level** configuration (minimal, low, medium, high).
-- Toggle for **Tavily Advanced Extraction**.
-- Real-time status updates.
-- **Built-in Logs Viewer**: Dedicated page to monitor sub-agent reasoning and research data.
+- Sidebar for selecting:
+    - **Agent model** (e.g., `gemini-3.1-flash-lite`).
+    - **Language Level** (Intermediate B1 to Proficient C2).
+    - **Gemini3 Thinking Level** (minimal, low, medium, high).
 - **Logging Toggle**: Controls the console logging level. When enabled, verbose log information about the agent's workflow is printed out in the console (DEBUG mode).
+- **Built-in Logs Viewer**: Dedicated page to monitor agent's tool results and research data.
+- **Token Usage Statistics**: A popover displaying token usage and estimated cost statistics is available after the generation process completes.
 - Copy-to-clipboard functionality for the generated letter.
+- Real-time status updates.
 
 ### 2. CLI (Command Line Interface)
 
@@ -130,28 +123,28 @@ uv run python app/main.py -f path/to/your_cv.pdf [options]
 | :--- | :--- | :--- | :--- |
 | `-f` | `--file_name` | **Required** | Path to the PDF CV file. |
 | `-v` | `--verbose` | `False` | Enable verbose logging to see detailed agent thoughts/actions. |
-| `-t` | `--tavily` | `False` | Enable Tavily advanced extraction for web research. |
 | `-l` | `--language_level` | `b1` | Language proficiency level (b1, b2, c1, c2). |
 | `-T` | `--thinking_level` | `minimal` | Gemini 3.0 thinking level (minimal, low, medium, high). |
-| `-m` | `--sa_model` | `gemini-2.5-flash` | Model name used by sub-agents (researcher, job info extractor, etc.). |
-| `-M` | `--ma_model` | `gemini-3-flash-preview` | Model name used by the main agent for final generation. |
+| `-m` | `--model` | `gemini-3.1-flash-lite-preview` | Gemini model used by the root agent. |
 
 #### Example
 
 ```bash
-uv run python app/main.py -f ./my_cv.pdf --verbose --tavily --ma_model gemini-3-pro-preview
+uv run python app/main.py -f ./my_cv.pdf --verbose --model gemini-3-pro-preview
 ```
 
 *Note: You will be prompted to enter the Company URL and Job Description URL after the script starts if they are not set in environment variables.*
+
+Upon successful completion, the script will display detailed token usage and estimated cost statistics formatted as a table in the terminal.
 
 ### 3. Google ADK Web UI
 
 Launch the agent using the Google Agent Development Kit's standard web interface.
 
 ```bash
-adk web [options]
+uv run adk web [options]
 ```  
-Run `adk web --help` to see available options.
+Run `uv run adk web --help` to see available options.
 
 ## 🐳 Docker
 
@@ -174,7 +167,6 @@ docker run --name cl-agent \
   --rm -it \
   -p 8501:8501 \
   -e GOOGLE_API_KEY=<your_google_api_key> \
-  -e TAVILY_API_KEY=<your_tavily_api_key> \
   -v "$(pwd)/logs:/cl_agent/logs" \
   cl-agent-streamlit
 ```

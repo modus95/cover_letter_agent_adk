@@ -12,17 +12,19 @@ from google.adk.plugins.logging_plugin import LoggingPlugin
 import utils
 from utils import AgentSettings
 from cover_letter_agent.agent import get_root_agent
+from tokentracker import TokenTrackerPlugin
 
+import rich
+from rich.console import Console
 
 load_dotenv()
+console = Console()
 
 session_service = InMemorySessionService()
 
 APP_NAME = "Cover Letter Agent"
 USER_ID = "slu"
 LOGFILE_NAME = "sub_agents_output.log"
-
-utils.setup_loggers(LOGFILE_NAME)
 
 
 async def main_async(
@@ -32,7 +34,8 @@ async def main_async(
 ):
     """Main entry point for the cover letter agent."""
 
-    plugins = [LoggingPlugin()] if verbose else None
+    token_tracker = TokenTrackerPlugin()
+    plugins = [LoggingPlugin(), token_tracker] if verbose else [token_tracker]
 
     # Initialize the runner
     runner = Runner(
@@ -47,44 +50,53 @@ async def main_async(
         app_name=APP_NAME, user_id=USER_ID)
     session_id = new_session.id
 
-    print("Welcome to the cover letter agent!\n")
-    print("Please provide the following information:\n")
-
     # Use environment variables if provided, otherwise prompt the user
     # (for debugging purposes)
     company_url = os.getenv("COMPANY_URL")
     if not company_url:
-        company_url = input("Company URL: ")
+        company_url = console.input("[blue]Company URL: ")
     else:
-        print(f"Company URL: {company_url}")
+        rich.print(f"[blue]Company URL: [white]{company_url}")
 
     job_role_url = os.getenv("JOB_ROLE_URL")
     if not job_role_url:
-        job_role_url = input("Job role URL: ")
+        job_role_url = console.input("[blue]Job URL: ")
     else:
-        print(f"Job role URL: {job_role_url}")
+        rich.print(f"[blue]Job URL: [white]{job_role_url}")
+
+    utils.setup_loggers(LOGFILE_NAME)
 
     prompt = utils.get_prompt(company_url,
                               job_role_url,
                               file_name)
 
-    print("\nProcessing your request...\n")
+    rich.print("[italic turquoise2]\nProcessing your request...\n")
     # Process the user query through the agent
-    agent_response = await utils.call_agent_async(
+    agent_response, _ = await utils.call_agent_async(
         runner,
         USER_ID,
         session_id,
         prompt,
+        token_tracker,
     )
 
-    print("\nTHE AGENT RESPONSE:\n")
     if isinstance(agent_response, str):
         agent_response = utils.load_json(agent_response)
     if agent_response:
-        print(agent_response.get("status").upper(),":")
+        report, w = utils.token_usage_report(token_tracker, agnt_settings.model)
+
+        console.rule("[bold bright_cyan]COVER LETTER", style="bright_cyan")
         print(agent_response.get("message"))
+        console.rule(style="bright_cyan")
+
+        if w == "error":
+            rich.print(f"[italic red]{report}")
+        else:
+            console.print(utils.to_rich_table(report, w))
+            if w:
+                rich.print(f"[italic yellow] ⚠️  {w}" )
     else:
-        print("No response from the agent! Check logs for details.")
+        rich.print("[bold red]❌ No response from the agent! Check logs for details.")
 
     # Save the log file as `sub_agents_output_<company_domain>.log`
     utils.copy_log_file(LOGFILE_NAME, company_url)
@@ -95,22 +107,13 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--file_name", type=str, required=True, help="Path to the PDF file")
     parser.add_argument("-v", "--verbose", default=False, action='store_true',
                         help="Enable verbose logging")
-    parser.add_argument("-t", "--tavily", default=False, action='store_true',
-                        help="Enable tavily advanced extraction")
     parser.add_argument("-l", "--language_level", type=str, default="b1",
                         choices=["b1", "b2", "c1", "c2"], help="Language level")
     parser.add_argument("-T", "--thinking_level", type=str, default="minimal",
                         choices=["minimal", "low", "medium", "high"], help="Gemini3 thinking level")
-    parser.add_argument("-m", "--sa_model", type=str, default="gemini-2.5-flash",
-                        help="Sub-agents model name")
-    parser.add_argument("-M", "--ma_model", type=str, default="gemini-3-flash-preview",
+    parser.add_argument("-m", "--model", type=str, default="gemini-3.1-flash-lite-preview",
                         help="Main agent model name")
     args = parser.parse_args()
-
-    models = {
-        "sub_agents_model": args.sa_model,
-        "main_agent_model": args.ma_model
-        }
 
     language_levels = {
         "b1": "Intermediate (B1)",
@@ -120,23 +123,17 @@ if __name__ == "__main__":
         }
 
     agent_settings = AgentSettings(
-                    models=models,
+                    model=args.model,
                     g3_thinking_level=args.thinking_level,
                     language_level=language_levels[args.language_level],
-                    tavily_advanced_extraction=args.tavily
                 )
 
     # Set up and run the asynchronous main function using an event loop
     # This is necessary for the Google ADK to work properly
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        loop.run_until_complete(
-            main_async(
-                args.file_name,
-                args.verbose,
-                agent_settings
-                )
-            )
-    finally:
-        loop.close()
+    asyncio.run(
+        main_async(
+            args.file_name,
+            args.verbose,
+            agent_settings
+        )
+    )

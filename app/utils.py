@@ -8,48 +8,22 @@ import pathlib
 import logging
 import datetime
 import shutil
+from pathlib import Path
 from urllib.parse import urlparse
 from dataclasses import dataclass
 from typing import Optional
 from contextlib import suppress
-from pydantic import BaseModel, Field
 
 import pypdf
-import streamlit.components.v1 as components
 
-from google.genai import types
-from google.adk.models.google_llm import Gemini
-from google.adk.agents.callback_context import CallbackContext
+from google.genai import Client, types
 from google.adk.planners.built_in_planner import BuiltInPlanner
 from google.adk.runners import Runner
 
+from tokentracker import TokenTrackerPlugin
 
-RETRY_CONFIG = types.HttpRetryOptions(
-    attempts=3,  # Maximum retry attempts
-    exp_base=5,  # Delay multiplier
-    initial_delay=1,
-    http_status_codes=[429, 500, 503, 504], # Retry on these HTTP errors
-)
-
-
-class ResponseContent(BaseModel):
-    """
-    Represents the structured content of an agent's response.
-
-    Attributes:
-        status (str): The status of the agent response, either 'success' or 'error'.
-        message (str): The main content of the agent response if status is 'success',
-                       or the error message if status is 'error'.
-    """
-    status: str = Field(
-        description="The status of the agent response. Should be 'success' or 'error'."
-    )
-    message: str = Field(
-        description=(
-            "The main content of the agent response if the status is 'success'."
-            " The error message if the status is 'error'."
-            )
-    )
+from rich.table import Table
+from rich import box
 
 
 @dataclass
@@ -58,18 +32,14 @@ class AgentSettings:
     Represents the settings for an agent.
 
     Attributes:
-        models (Optional[str | dict]): The name of the model or a dictionary 
+        model (str): The name of the model
         specifying different models for sub-agents and the main agent.
         g3_thinking_level (str): The thinking level of Gemini3 to use.
-        top_p (float): The top-p parameter (0.0-1.0) controls the diversity of the generated text.
         language_level (str): The language level (B1-C2) to use.
-        tavily_advanced_extraction (bool): Whether to use Tavily advanced extraction.
     """
-    models: Optional[str | dict]
+    model: str
     g3_thinking_level: str
-    top_p: float
     language_level: str
-    tavily_advanced_extraction: bool
 
 
 def load_json(data):
@@ -81,99 +51,75 @@ def load_json(data):
     return json.loads(json_str)
 
 
-def logging_agent_output_status(callback_context: CallbackContext) -> None:
-    """
-    Logs the output status and message of an agent's operation.
-
-    This function extracts the agent's name and its output from the provided
-    `CallbackContext`, determines the status (success or error), and logs
-    the relevant information using a dedicated agent output logger. It handles
-    different agents by mapping their names to specific output keys.
-
-    Args:
-        callback_context (CallbackContext): The context object containing
-                                            the agent's state and name
-    """
+def logging_tool_output_status(**kwargs) -> None:
+    """Logs the status of a tool's execution and its output."""
 
     status_logger = logging.getLogger("agent_status_logger")
     output_logger = logging.getLogger("agent_output_logger")
 
-    output_keys = {
-        "cv_parcer_agent": "cv_info",
-        "job_information_agent": "job_role_information",
-        "company_web_researcher": "company_info"
-    }
+    tool = kwargs.get("tool")
+    tool_response = kwargs.get("tool_response")
 
-    current_state = callback_context.state
-    agent_name = callback_context.agent_name
-    agent_output_key = output_keys[agent_name]
-    log_title = " ".join(agent_output_key.split("_")).upper()
+    status = 'SUCCESS' if tool_response else 'ERROR'
+    warning_msg = None if tool_response else "Tool execution failed or returned empty response."
 
-    try:
-        output_dict = current_state.get(agent_output_key)
-        if isinstance(output_dict, str):
-            output_dict = load_json(output_dict)
+    status_logger.info("%s: %s", tool.name, status)
 
-        status = output_dict.get("status")
-        message = output_dict.get("message")
-
-        status_logger.info("%s: %s", agent_name, status.upper())
-        output_logging(output_logger,
-                       f"{log_title} / {status.upper()}",
-                       message)
-
-    except (KeyError, AttributeError) as err:
-        output_logging(output_logger,
-                       f"{log_title} / (Raw Output)",
-                       json.dumps(output_dict, indent=4),
-                       str(err))
-    except json.JSONDecodeError as err:
-        output_logging(status_logger,
-                       f"{log_title} / ERROR",
-                       output_dict,
-                       str(err))
-
-
-def define_model(model_name:str) -> Gemini:
-    """
-    Initializes and returns a Gemini model instance.
-
-    Args:
-        model_name (str): The name of the Gemini model to instantiate.
-    Returns:
-        Gemini: An instance of the Gemini model configured with the specified retry options.
-    """
-    # Remove parentheses and their contents from the model name
-    # example: "gemini-3-pro-preview (Low thinking)" -> "gemini-3-pro-preview"
-    model_name = re.sub(r"\s*\([^)]*\)", "", model_name)
-    return Gemini(model=model_name, retry_options=RETRY_CONFIG)
-
-
-def get_planner(md: Gemini, thinking_level: str) -> Optional[BuiltInPlanner]:
-    """
-    Determines and returns a BuiltInPlanner based on the model version.
-
-    If the model version (extracted from `md.model`) is 3 or greater,
-    it returns a BuiltInPlanner configured with a low thinking level.
-    Otherwise, it returns None.
-
-    Args:
-        md: An object containing model information, expected to have a 'model'
-            attribute (e.g., `md.model = "gemini-3.0-flash"`).
-        thinking_level: The thinking level to use for the planner 
-        ("minimal", "low", "medium", "high").
-
-    Returns:
-        An instance of BuiltInPlanner if the model version is 3 or higher,
-        otherwise None.
-    """
-    version = float(md.model.split("-")[1])
-    if version >= 3 and thinking_level in ["minimal", "low", "medium", "high"]:
-        return BuiltInPlanner(
-            thinking_config=types.ThinkingConfig(thinking_level=thinking_level)
+    output_logging(
+        output_logger,
+        f"{tool.name} / {status}",
+        tool_response,
+        warning_msg
         )
 
-    return None
+
+def get_client() -> Client:
+    """Initializes and returns Google GenAI Client instance"""
+
+    api_key = os.environ.get("GOOGLE_API_KEY")
+    if not api_key:
+        raise ValueError("GOOGLE_API_KEY environment variable is not set.")
+    return Client(api_key=api_key)
+
+
+def get_gemini_model_list() -> list:
+    """Return available text Gemini models."""
+    models_pat = re.compile(
+        r"models\/(gemini-(?!.*(?:audio|image|live|tts))[\d.]+-(?:flash|pro)(?:-[a-z0-9\-]*)?$)"
+    )
+    client = get_client()
+    models = []
+
+    for listed_model in client.models.list():
+        result = models_pat.search(listed_model.name)
+        if result and float(result.group(1).split("-")[1]) >= 3:  # Include models v3.0 and higher
+            models.append(result.group(1))
+
+    return models[::-1]  # Reverse to show the latest models first
+
+
+def get_planner(agent_settings: AgentSettings) -> BuiltInPlanner:
+    """
+    Create a built-in planner with model-appropriate thinking configuration.
+
+    For Gemini versions earlier than 3, this uses a fixed `thinking_budget=2048`.
+    For Gemini 3+ models, this uses the provided `thinking_level`.
+
+    Args:
+        agent_settings (AgentSettings): The configuration settings for the agents.
+
+    Returns:
+        BuiltInPlanner: Planner configured for the given model version.
+    """
+    model = agent_settings.model
+    thinking_level = agent_settings.g3_thinking_level
+
+    version = float(model.split("-")[1])
+    thinking_config = (
+        types.ThinkingConfig(thinking_budget=2048) if version < 3
+            else types.ThinkingConfig(thinking_level=thinking_level)
+        )
+    return BuiltInPlanner(thinking_config=thinking_config)
 
 
 def save_uploaded_file(uploaded_file):
@@ -236,7 +182,7 @@ def output_logging(logg: logging.Logger,
         logg (logging.Logger): The logger instance to use for output.
         ttl (str): The title or header string for the log output.
         info_str (str): The main information string to be logged.
-        warning (Optional[str]): An optional warning message. 
+        warning (Optional[str]): An optional warning message.
             If provided, it will be logged as a warning.
     """
     logg.info(ttl)
@@ -295,7 +241,7 @@ def setup_loggers(logfile_name: str):
 
 def get_domain(url: str) -> str:
     """
-    Extracts the domain name from a URL.    
+    Extracts the domain name from a URL.
     Example: "https://www.google.com/search" -> "google"
     """
     if not url.startswith(('http://', 'https://')):
@@ -350,6 +296,7 @@ async def call_agent_async(
     user_id: str,
     session_id: str,
     prompt: str,
+    ttp: TokenTrackerPlugin,
     ):
     """Call the agent asynchronously with the user's prompt and file."""
 
@@ -360,6 +307,8 @@ async def call_agent_async(
         parts=[types.Part(text=prompt)]
         )
 
+    # TokenTrackerPlugin instance (ttp) is updated while agent is running
+    # through the callback method `on_event_callback`
     agen = runner.run_async(
         user_id=user_id,
         session_id=session_id,
@@ -376,89 +325,101 @@ async def call_agent_async(
         with suppress(Exception):
             await agen.close()
 
-    return final_response_text
+    return final_response_text, ttp
 
 
-def st_copy_to_clipboard_button(text: str):
+def load_model_pricing(model: str, price_file: str = "llm_prices.json") -> dict | None:
+    """Load pricing for a specific model from llm_prices.json."""
+
+    prices_path = Path.home() / "Projects" / price_file
+
+    try:
+        with open(prices_path, "r", encoding="utf-8") as file:
+            prices = json.load(file)
+    except (OSError, json.JSONDecodeError):
+        return None
+
+    name_parts = model.split('-')
+    provider_prices = prices.get(name_parts[0], [])
+
+    if not isinstance(provider_prices, list):
+        return None
+
+    # Remove model suffixes such as "preview", "customtools", etc
+    cutted_name = \
+        "-".join(name_parts[:-1]) if name_parts[-1] not in ["flash", "lite", "pro"] else ""
+
+    for entry in provider_prices:
+        if (model == entry.get("model", "") or
+                (cutted_name and cutted_name == entry.get("model", ""))
+            ):
+            return entry
+
+    return None
+
+
+def token_usage_report(
+    token_tracker: TokenTrackerPlugin,
+    model: str,
+    ) -> tuple[str, str]:
     """
-    Displays a copy-to-clipboard button using a custom HTML component.
-    
+    Generate a markdown-formatted summary of token usage and estimated costs.
+
     Args:
-        text (str): The text to be copied to the clipboard.
+        token_tracker (TokenTrackerPlugin): The token tracker instance containing usage data.
+        model (str): The name of the model to determine pricing.
     """
-    # pylint: disable=line-too-long
+    if token_tracker is None:
+        return "Token usage info not available.", "error"
 
-    # Escape the text for JavaScript
-    text_js = json.dumps(text)
+    pricing = load_model_pricing(model)
+    return token_tracker.markdown_summary(pricing)
 
-    html_code = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            .zeroclipboard-container {{
-                display: flex;
-                justify-content: flex-start; /* Align to left to match potential layout, or center */
-                align-items: center;
-            }}
-            .ClipboardButton {{
-                background-color: transparent;
-                border: none;
-                cursor: pointer;
-                padding: 4px;
-                border-radius: 6px;
-                color: #57606a;
-                transition: background-color 0.2s;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }}
-            .ClipboardButton:hover {{
-                background-color: rgba(0,0,0,0.05);
-                color: #0969da;
-            }}
-            .d-none {{
-                display: none !important;
-            }}
-            .color-fg-success {{
-                color: #1a7f37 !important;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="zeroclipboard-container">
-            <button aria-label="Copy" class="ClipboardButton" id="copy-button">
-                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="octicon octicon-copy js-clipboard-copy-icon" id="copy-icon">
-                    <path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"></path>
-                    <path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"></path>
-                </svg>
-                <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" class="octicon octicon-check js-clipboard-check-icon color-fg-success d-none" id="check-icon">
-                    <path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"></path>
-                </svg>
-            </button>
-        </div>
 
-        <script>
-            const button = document.getElementById('copy-button');
-            const copyIcon = document.getElementById('copy-icon');
-            const checkIcon = document.getElementById('check-icon');
-            const textToCopy = {text_js};
-
-            button.addEventListener('click', () => {{
-                navigator.clipboard.writeText(textToCopy).then(() => {{
-                    copyIcon.classList.add('d-none');
-                    checkIcon.classList.remove('d-none');
-
-                    setTimeout(() => {{
-                        checkIcon.classList.add('d-none');
-                        copyIcon.classList.remove('d-none');
-                    }}, 2000);
-                }}).catch(err => {{
-                    console.error('Failed to copy text: ', err);
-                }});
-            }});
-        </script>
-    </body>
-    </html>
+def to_rich_table(md_str: str, w:str) -> Table:
     """
-    components.html(html_code, height=40)
+    Convert a markdown table to a Rich table.
+
+    Args:
+        md_str (str): The markdown string containing the table.
+
+    Returns:
+        Table: The Rich table.
+    """
+    lines = [line.strip() for line in md_str.split('\n') if line.strip()]
+
+    title = lines[0].replace('#### ', '')
+    header_line = lines[1]
+    headers = [h.strip() for h in header_line.split('|') if h.strip()]
+
+    table = Table(
+        title=title + ':\n',
+        show_edge=False,
+        box = box.SIMPLE_HEAD,
+        title_style="bold bright_cyan",
+        title_justify='left'
+        )
+
+    for header in headers:
+        table.add_column(header, justify="center" if header != "Agent" else "left")
+
+    # Process data rows
+    data_lines = lines[3:]  # Skip Header, Separator, and Title
+    total_rows = len(data_lines)
+    delta = int(len(w) > 0)
+
+    for i, line in enumerate(data_lines, 1):
+        row_data = [col.replace("**","").strip() for col in line.split('|') if col.strip()]
+
+        end_selection = i == total_rows - 2 + delta
+        row_style = None
+
+        if i > total_rows - 2 + delta:
+            row_style = "bold"
+        if i == total_rows + delta:
+            row_style += " cyan"
+            row_data[-1] = f"[italic turquoise2] {row_data[-1]}"
+
+        table.add_row(*row_data, style=row_style, end_section=end_selection)
+
+    return table

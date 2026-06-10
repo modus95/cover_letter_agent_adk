@@ -5,6 +5,7 @@ __pycache__
 *.pdf
 .vscode
 *.ipynb
+.adk
 logs
 agent_docker.sh
 
