@@ -22,6 +22,7 @@ app/
 ├── streamlit_app.py       # Main Streamlit web application
 ├── pages/                 # Additional Streamlit pages
 │   └── logs_viewer.py     # Logs monitoring interface
+├── tokentracker.py        # Token tracking utility
 ├── ui.py                  # Streamlit UI components
 ├── style.css              # Custom styling for Streamlit
 ├── utils.py               # Shared utility functions
@@ -57,6 +58,7 @@ To help monitor the process, the intermediate results of agent's tools are logge
 - `python-dotenv`
 - `nest_asyncio`
 - `pypdf`
+- `rich`
 - Access to Google Gemini API and Search tools.
 
 ## 🔧 Configuration
@@ -97,13 +99,15 @@ Alternatively, you can use the provided helper script:
 ```
 
 **Features:**
-- Sidebar for selecting **Agent model** (e.g., `gemini-3.1-flash-lite`).
-- **Language Level** selection (Intermediate B1 to Proficient C2).
-- **Gemini3 Thinking Level** configuration (minimal, low, medium, high).
-- Real-time status updates.
-- **Built-in Logs Viewer**: Dedicated page to monitor agent's tool results and research data.
+- Sidebar for selecting:
+    - **Agent model** (e.g., `gemini-3.1-flash-lite`).
+    - **Language Level** (Intermediate B1 to Proficient C2).
+    - **Gemini3 Thinking Level** (minimal, low, medium, high).
 - **Logging Toggle**: Controls the console logging level. When enabled, verbose log information about the agent's workflow is printed out in the console (DEBUG mode).
+- **Built-in Logs Viewer**: Dedicated page to monitor agent's tool results and research data.
+- **Token Usage Statistics**: A popover displaying token usage and estimated cost statistics is available after the generation process completes.
 - Copy-to-clipboard functionality for the generated letter.
+- Real-time status updates.
 
 ### 2. CLI (Command Line Interface)
 
@@ -121,7 +125,7 @@ uv run python app/main.py -f path/to/your_cv.pdf [options]
 | `-v` | `--verbose` | `False` | Enable verbose logging to see detailed agent thoughts/actions. |
 | `-l` | `--language_level` | `b1` | Language proficiency level (b1, b2, c1, c2). |
 | `-T` | `--thinking_level` | `minimal` | Gemini 3.0 thinking level (minimal, low, medium, high). |
-| `-ь` | `--model` | `gemini-3.1-flash-lite-preview` | Gemini model used by the root agent. |
+| `-m` | `--model` | `gemini-3.1-flash-lite-preview` | Gemini model used by the root agent. |
 
 #### Example
 
@@ -131,14 +135,16 @@ uv run python app/main.py -f ./my_cv.pdf --verbose --model gemini-3-pro-preview
 
 *Note: You will be prompted to enter the Company URL and Job Description URL after the script starts if they are not set in environment variables.*
 
+Upon successful completion, the script will display detailed token usage and estimated cost statistics formatted as a table in the terminal.
+
 ### 3. Google ADK Web UI
 
 Launch the agent using the Google Agent Development Kit's standard web interface.
 
 ```bash
-adk web [options]
+uv run adk web [options]
 ```  
-Run `adk web --help` to see available options.
+Run `uv run adk web --help` to see available options.
 
 ## 🐳 Docker
 
