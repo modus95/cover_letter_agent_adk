@@ -85,7 +85,8 @@ def get_client() -> Client:
 def get_gemini_model_list() -> list:
     """Return available text Gemini models."""
     models_pat = re.compile(
-        r"models\/(gemini-(?!.*(?:audio|image|live|tts))[\d.]+-(?:flash|pro)(?:-[a-z0-9\-]*)?$)"
+        r"models\/(gemini-(?!.*(?:audio|image|live|tts))[3-9][.\d]*-(?:flash|pro|argon)"
+        r"(?:-[a-z0-9\-]*)?$)"
     )
     client = get_client()
     models = []

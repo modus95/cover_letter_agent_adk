@@ -50,7 +50,7 @@ def render_sidebar() -> AgentSettings:
     model = gemini_expander.selectbox(
                             "Agent model",
                             options=available_models,
-                            index=2
+                            # index=2
                         )
 
     g3_thinking_level = gemini_expander.selectbox(
